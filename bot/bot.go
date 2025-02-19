@@ -3,7 +3,7 @@ package bot
 import (
 	"fmt"
 
-	"github.com/Safmica/undercover-bot/config"
+	"github.com/Safmica/discord-bot/config"
 	"github.com/bwmarrin/discordgo"
 )
 

@@ -1,4 +1,4 @@
-module github.com/Safmica/undercover-bot
+module github.com/Safmica/discord-bot
 
 go 1.22.1
 

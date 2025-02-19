@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/Safmica/undercover-bot/models"
+	"github.com/Safmica/discord-bot/models"
 	"github.com/joho/godotenv"
 )
 

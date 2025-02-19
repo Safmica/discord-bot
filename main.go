@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Safmica/undercover-bot/bot"
-	"github.com/Safmica/undercover-bot/config"
+	"github.com/Safmica/discord-bot/bot"
+	"github.com/Safmica/discord-bot/config"
 )
 
 func main() {
