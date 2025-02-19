@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"strings"
+
 	models "github.com/Safmica/discord-bot/features/undercover"
 	"github.com/bwmarrin/discordgo"
 )
@@ -106,5 +108,9 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			}
 			StartGameSession(s, i)
 		}
-	}
+
+        if strings.HasPrefix(data.CustomID, "vote_") {
+            HandleVote(s, i, data.CustomID)
+        }
+    }
 }

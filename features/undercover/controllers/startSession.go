@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 
 	models "github.com/Safmica/discord-bot/features/undercover"
 	"github.com/bwmarrin/discordgo"
@@ -70,5 +71,76 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 
-	s.ChannelMessageSend(i.Interaction.ChannelID, "🎮 Game telah dimulai! Diskusikan dan temukan Undercover!")
+	playerList := "📜 **Daftar Pemain:**\n"
+	var buttons []discordgo.MessageComponent
+
+	for _, p := range players {
+		playerList += fmt.Sprintf("- <@%s>\n", p.ID)
+		buttons = append(buttons, discordgo.Button{
+			Label:    p.Username,
+			Style:    discordgo.PrimaryButton,
+			CustomID: "vote_" + p.ID,
+		})
+	}
+
+	buttons = append(buttons, discordgo.Button{
+		Label:    "Skip",
+		Style:    discordgo.DangerButton,
+		CustomID: "vote_skip",
+	})
+
+	s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
+		Content: playerList + "\n🗳 **Silakan pilih pemain yang mencurigakan!**",
+		Components: []discordgo.MessageComponent{
+			discordgo.ActionsRow{Components: buttons},
+		},
+	})
+}
+
+var playerVotes = make(map[string]string)
+var voteCount = make(map[string]int)
+var voteMessageID string
+
+func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix string) {
+    userID := i.Member.User.ID
+    voteTarget := strings.TrimPrefix(prefix, "vote_")
+
+    if _, voted := playerVotes[userID]; voted {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: "❌ Kamu sudah memilih! Tidak bisa memilih lagi.",
+                Flags:   discordgo.MessageFlagsEphemeral,
+            },
+        })
+        return
+    }
+
+    playerVotes[userID] = voteTarget
+    voteCount[voteTarget]++
+
+    voteResults := "📊 **Hasil Voting Sementara:**\n"
+    for playerID, count := range voteCount {
+        voteResults += fmt.Sprintf("- <@%s>: %d suara\n", playerID, count)
+    }
+
+    if voteMessageID != "" {
+        _, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteMessageID, voteResults)
+        if err != nil {
+            fmt.Println("Gagal mengedit pesan voting:", err)
+        }
+    } else {
+        msg, err := s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
+        if err == nil {
+            voteMessageID = msg.ID
+        }
+    }
+
+    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+        Type: discordgo.InteractionResponseChannelMessageWithSource,
+        Data: &discordgo.InteractionResponseData{
+            Content: "✅ Vote kamu telah dicatat!",
+            Flags:   discordgo.MessageFlagsEphemeral,
+        },
+    })
 }
