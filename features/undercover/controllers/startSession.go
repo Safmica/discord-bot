@@ -105,6 +105,10 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
     userID := i.Member.User.ID
     voteTarget := strings.TrimPrefix(prefix, "vote_")
 
+    if models.ActiveGame == nil || !models.ActiveGame.Started {
+        return
+    }
+
     if _, voted := playerVotes[userID]; voted {
         s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
             Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -118,6 +122,64 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 
     playerVotes[userID] = voteTarget
     voteCount[voteTarget]++
+
+    if len(playerVotes) == len(models.ActiveGame.Players) {
+        maxVotes := 0
+        voteLeaders := []string{}
+
+        for playerID, count := range voteCount {
+            if count > maxVotes {
+                maxVotes = count
+                voteLeaders = []string{playerID}
+            } else if count == maxVotes {
+                voteLeaders = append(voteLeaders, playerID)
+            }
+        }
+
+        var eliminatedPlayerID string
+        eliminationMessage := ""
+
+        if len(voteLeaders) == 1 {
+            eliminatedPlayerID = voteLeaders[0]
+            delete(models.ActiveGame.Players, eliminatedPlayerID)
+            eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
+        } else {
+            eliminationMessage = "⚖️ Hasil voting seri! Tidak ada yang dieliminasi."
+        }
+
+        civilianCount := 0
+        undercoverCount := 0
+
+        for _, player := range models.ActiveGame.Players {
+            if player.Role == models.Civilian {
+                civilianCount++
+            } else if player.Role == models.Undercover {
+                undercoverCount++
+            }
+        }
+
+        var endMessage string
+        gameEnded := false
+
+        if undercoverCount == 0 {
+            endMessage = "🎉 **Civilian menang!** Semua Undercover telah dieliminasi."
+            gameEnded = true
+        } else if undercoverCount >= civilianCount {
+            endMessage = "🤫 **Undercover menang!** Mereka berhasil menguasai permainan."
+            gameEnded = true
+        }
+
+        if gameEnded {
+            models.ActiveGame = nil
+            s.ChannelMessageSend(i.Interaction.ChannelID, endMessage)
+        } else {
+            s.ChannelMessageSend(i.Interaction.ChannelID, eliminationMessage)
+        }
+
+        playerVotes = make(map[string]string)
+        voteCount = make(map[string]int)
+        voteMessageID = ""
+    }
 
     voteResults := "📊 **Hasil Voting Sementara:**\n"
     for playerID, count := range voteCount {
