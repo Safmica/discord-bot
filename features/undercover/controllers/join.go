@@ -48,4 +48,6 @@ func JoinGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
             Content: fmt.Sprintf("✅ %s telah bergabung dalam game!", username),
         },
     })
+
+	updateGameMessage(s, i.ChannelID, i.Message.ID)
 }

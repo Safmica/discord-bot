@@ -17,7 +17,7 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
         Started: false,
     }
 
-    sendMessageWithButton(s, m, i, "🎮 Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung.", "join_game", "Join Game")
+    sendMessageWithButton(models.ActiveGame,s, m, i, "🎮 Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung.", "join_game", "Join Game")
 }
 
 func getChannelID(m *discordgo.MessageCreate, i *discordgo.InteractionCreate) string {
@@ -27,7 +27,7 @@ func getChannelID(m *discordgo.MessageCreate, i *discordgo.InteractionCreate) st
     return i.ChannelID
 }
 
-func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.InteractionCreate, content string) {
+func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.InteractionCreate, content string){
     if m != nil {
         s.ChannelMessageSend(m.ChannelID, content)
     } else {
@@ -40,7 +40,7 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.
     }
 }
 
-func sendMessageWithButton(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.InteractionCreate, content, buttonID, buttonLabel string) {
+func sendMessageWithButton(game *models.GameSession,s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.InteractionCreate, content, buttonID, buttonLabel string) {
     msg := &discordgo.MessageSend{
         Content: content,
         Components: []discordgo.MessageComponent{
@@ -57,7 +57,8 @@ func sendMessageWithButton(s *discordgo.Session, m *discordgo.MessageCreate, i *
     }
 
     if m != nil {
-        s.ChannelMessageSendComplex(m.ChannelID, msg)
+        message, _ := s.ChannelMessageSendComplex(m.ChannelID, msg)
+        game.GameMessageID = message.ID
     } else {
         s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
             Type: discordgo.InteractionResponseChannelMessageWithSource,

@@ -20,6 +20,7 @@ type GameSession struct {
     ID       string
     Players  map[string]*Player
     Started  bool
+    GameMessageID string
     Mutex    sync.Mutex
 }
 
