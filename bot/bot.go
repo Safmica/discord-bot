@@ -2,8 +2,10 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/Safmica/discord-bot/config"
+	"github.com/Safmica/discord-bot/features/undercover/controllers"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -46,7 +48,18 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
         return
     }
 
-    fmt.Println("Received message:", m.Content)
+	if !strings.HasPrefix(m.Content, config.Config.BotPrefix) {
+		return
+	}
+
+	command := strings.TrimPrefix(m.Content, config.Config.BotPrefix)
+
+	switch command {
+	case "start":
+		controllers.StartGame(s, m, nil)
+	}
+
+	fmt.Println("Received message:", m.Content)
 
     if m.Content == "<@"+BotId+"> ping"{
         _, err := s.ChannelMessageSend(m.ChannelID, "pong!")
@@ -62,4 +75,3 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
         }
     }
 }
-
