@@ -30,7 +30,7 @@ func Start() error{
 	BotId = u.ID
 
 	goBot.AddHandler(messageHandler)
-	goBot.AddHandler(interactionHandler)
+	goBot.AddHandler(controllers.UndercoverHandler)
 
 
 	err = goBot.Open()
@@ -74,16 +74,6 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
         _, err := s.ChannelMessageSend(m.ChannelID, "pong!")
         if err != nil {
             fmt.Println("Error sending message:", err)
-        }
-    }
-}
-
-func interactionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-    switch i.Type {
-    case discordgo.InteractionMessageComponent:
-        data := i.MessageComponentData()
-        if data.CustomID == "join_game" {
-            controllers.JoinGame(s, i)
         }
     }
 }

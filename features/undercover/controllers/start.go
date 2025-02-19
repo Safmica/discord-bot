@@ -11,13 +11,23 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
         return
     }
 
+    hostID := getUserID(m, i)
+
     models.ActiveGame = &models.GameSession{
         ID:      getChannelID(m, i),
         Players: make(map[string]*models.Player),
+        HostID:  hostID, 
         Started: false,
     }
 
-    sendMessageWithButton(models.ActiveGame,s, m, i, "🎮 Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung.", "join_game", "Join Game")
+    sendMessageWithButtons(models.ActiveGame, s, m, i, "🎮 Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung.")
+}
+
+func getUserID(m *discordgo.MessageCreate, i *discordgo.InteractionCreate) string {
+    if m != nil {
+        return m.Author.ID
+    }
+    return i.Member.User.ID
 }
 
 func getChannelID(m *discordgo.MessageCreate, i *discordgo.InteractionCreate) string {
@@ -40,16 +50,21 @@ func sendMessage(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.
     }
 }
 
-func sendMessageWithButton(game *models.GameSession,s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.InteractionCreate, content, buttonID, buttonLabel string) {
+func sendMessageWithButtons(game *models.GameSession, s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.InteractionCreate, content string) {
     msg := &discordgo.MessageSend{
         Content: content,
         Components: []discordgo.MessageComponent{
             discordgo.ActionsRow{
                 Components: []discordgo.MessageComponent{
                     discordgo.Button{
-                        Label:    buttonLabel,
+                        Label:    "Join Game",
                         Style:    discordgo.PrimaryButton,
-                        CustomID: buttonID,
+                        CustomID: "join_game",
+                    },
+                    discordgo.Button{
+                        Label:    "Start Game",
+                        Style:    discordgo.SuccessButton,
+                        CustomID: "start_game",
                     },
                 },
             },
@@ -68,4 +83,28 @@ func sendMessageWithButton(game *models.GameSession,s *discordgo.Session, m *dis
             },
         })
     }
+}
+
+func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    switch i.Type {
+    case discordgo.InteractionMessageComponent:
+        data := i.MessageComponentData()
+        if data.CustomID == "join_game" {
+            JoinGame(s, i)
+        }
+
+		if data.CustomID == "start_game" {
+			if models.ActiveGame == nil || models.ActiveGame.HostID != i.Member.User.ID {
+				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: "🚫 Hanya pembuat game yang bisa memulai game!",
+						Flags:   discordgo.MessageFlagsEphemeral,
+					},
+				})
+				return
+			}
+			StartGameSession(s, i)
+		}
+	}
 }
