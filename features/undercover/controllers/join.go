@@ -42,12 +42,5 @@ func JoinGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
         Role:     "",
     }
 
-    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-        Type: discordgo.InteractionResponseChannelMessageWithSource,
-        Data: &discordgo.InteractionResponseData{
-            Content: fmt.Sprintf("✅ %s telah bergabung dalam game!", username),
-        },
-    })
-
 	updateGameMessage(s, i.ChannelID, i.Message.ID)
 }
