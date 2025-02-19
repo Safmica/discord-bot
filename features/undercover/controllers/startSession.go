@@ -89,12 +89,18 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		CustomID: "vote_skip",
 	})
 
-	s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
+	msg, err := s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
 		Content: playerList + "\n🗳 **Silakan pilih pemain yang mencurigakan!**",
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{Components: buttons},
 		},
 	})
+	if err != nil {
+        fmt.Println("Gagal mengirim pesan:", err)
+        return
+    }
+
+	lastVoteMessageID = msg.ID
 }
 
 var playerVotes = make(map[string]string)
@@ -106,6 +112,17 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
     voteTarget := strings.TrimPrefix(prefix, "vote_")
 
     if models.ActiveGame == nil || !models.ActiveGame.Started {
+        return
+    }
+
+    if _, exists := models.ActiveGame.Players[userID]; !exists {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: "❌ Kamu sudah dieliminasi dan tidak bisa vote.",
+                Flags:   discordgo.MessageFlagsEphemeral,
+            },
+        })
         return
     }
 
@@ -147,8 +164,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
             eliminationMessage = "⚖️ Hasil voting seri! Tidak ada yang dieliminasi."
         }
 
-        civilianCount := 0
-        undercoverCount := 0
+        civilianCount, undercoverCount := 0, 0
 
         for _, player := range models.ActiveGame.Players {
             if player.Role == models.Civilian {
@@ -174,6 +190,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
             s.ChannelMessageSend(i.Interaction.ChannelID, endMessage)
         } else {
             s.ChannelMessageSend(i.Interaction.ChannelID, eliminationMessage)
+            SendVotingMessage(s, i,i.Interaction.ChannelID)
         }
 
         playerVotes = make(map[string]string)
@@ -205,4 +222,56 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
             Flags:   discordgo.MessageFlagsEphemeral,
         },
     })
+}
+
+var lastVoteMessageID string
+
+func SendVotingMessage(s *discordgo.Session,i *discordgo.InteractionCreate, channelID string) {
+    if models.ActiveGame == nil || !models.ActiveGame.Started {
+        return
+    }
+
+    CloseVoting(s,i, channelID)
+	fmt.Println(lastVoteMessageID)
+
+    playerList := "📜 **Daftar Pemain yang Masih Hidup:**\n"
+    var buttons []discordgo.MessageComponent
+
+    for _, p := range models.ActiveGame.Players {
+        playerList += fmt.Sprintf("- <@%s>\n", p.ID)
+        buttons = append(buttons, discordgo.Button{
+            Label:    p.Username,
+            Style:    discordgo.PrimaryButton,
+            CustomID: "vote_" + p.ID,
+        })
+    }
+
+    buttons = append(buttons, discordgo.Button{
+        Label:    "Skip",
+        Style:    discordgo.DangerButton,
+        CustomID: "vote_skip",
+    })
+
+    s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+        Content: playerList + "\n🗳 **Silakan pilih pemain yang mencurigakan!**",
+        Components: []discordgo.MessageComponent{
+            discordgo.ActionsRow{Components: buttons},
+        },
+    })
+}
+
+func CloseVoting(s *discordgo.Session,i *discordgo.InteractionCreate, channelID string) {
+	if lastVoteMessageID != "" {
+		content := "🗳 **Voting telah selesai!**"
+		_, err := s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			ID:      lastVoteMessageID,
+			Channel: i.Interaction.ChannelID,
+			Content: &content, 
+			Components: &[]discordgo.MessageComponent{},  
+		})
+		if err != nil {
+			fmt.Println("Gagal menghapus tombol dari pesan voting:", err)
+		}
+		lastVoteMessageID = "" 
+	}
 }
