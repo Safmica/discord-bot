@@ -16,7 +16,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	playerCount := len(models.ActiveGame.Players)
-	if playerCount < 3 {
+	if playerCount < 4 {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -39,8 +39,11 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	civilianWord := "Apple"
 	undercoverWord := "Orange"
 
-	players[0].Role = models.Undercover
-	for i := 1; i < len(players); i++ {
+	for i := 0; i < models.ActiveGame.Undercover; i++ {
+		players[i].Role = models.Undercover
+	}
+
+    for i := models.ActiveGame.Undercover; i < len(players); i++ {
 		players[i].Role = models.Civilian
 	}
 

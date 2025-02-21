@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"strings"
 
 	models "github.com/Safmica/discord-bot/features/undercover"
@@ -20,9 +21,13 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
         Players: make(map[string]*models.Player),
         HostID:  hostID, 
         Started: false,
+        ShowRoles: true,
+        Undercover: 1,
     }
 
-    sendMessageWithButtons(models.ActiveGame, s, m, i, "🎮 Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung.")
+    content :=  fmt.Sprintf("🎮 **Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung**.\n _Jumlah Undercover = %d_ \n _Showroles = %t_", models.ActiveGame.Undercover, models.ActiveGame.ShowRoles)
+
+    sendMessageWithButtons(models.ActiveGame, s, m, i, content)
 }
 
 func getUserID(m *discordgo.MessageCreate, i *discordgo.InteractionCreate) string {

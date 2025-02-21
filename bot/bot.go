@@ -53,13 +53,18 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if !strings.HasPrefix(m.Content, config.Config.BotPrefix) {
 		return
 	}
-
 	command := strings.TrimPrefix(m.Content, config.Config.BotPrefix)
-
-	switch command {
-	case "start":
+	command = strings.TrimSpace(command)
+	
+	switch {
+	case command == "undercover":
 		controllers.StartGame(s, m, nil)
+	case strings.HasPrefix(command, "undercover config"):
+		args := strings.TrimPrefix(command, "undercover config")
+		args = strings.TrimSpace(args) // Hilangkan spasi ekstra sebelum mengirim ke controller
+		controllers.ConfigUndercover(s, m ,args)
 	}
+	
 
 	fmt.Println("Received message:", m.Content)
 

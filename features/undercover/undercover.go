@@ -23,6 +23,8 @@ type GameSession struct {
 	HostID        string
 	GameMessageID string
 	Mutex         sync.Mutex
+	Undercover    int
+	ShowRoles     bool
 }
 
 var ActiveGame *GameSession
