@@ -38,9 +38,11 @@ func JoinGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
         return
     }
 
-    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-        Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
-    })
+    if lastJoinMessageID == ""{ 
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+        })
+    }
 
     models.ActiveGame.Players[userID] = &models.Player{
         ID:       userID,
