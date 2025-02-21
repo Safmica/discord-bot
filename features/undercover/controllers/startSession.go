@@ -72,33 +72,58 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 
-	playerList := "📜 **Daftar Pemain:**\n"
-	var buttons []discordgo.MessageComponent
+    playerList := "📜 **Daftar Pemain:**\n"
+    var components []discordgo.MessageComponent
+    var buttons []discordgo.MessageComponent
 
-	for _, p := range players {
-		playerList += fmt.Sprintf("- <@%s>\n", p.ID)
-		buttons = append(buttons, discordgo.Button{
-			Label:    p.Username,
-			Style:    discordgo.PrimaryButton,
-			CustomID: "vote_" + p.ID,
-		})
-	}
+    for _, p := range players {
+        playerList += fmt.Sprintf("- <@%s>\n", p.ID)
+    
+        buttons = append(buttons, discordgo.Button{
+            Label:    p.Username,
+            Style:    discordgo.PrimaryButton,
+            CustomID: "vote_" + p.ID,
+        })
 
-	buttons = append(buttons, discordgo.Button{
-		Label:    "Skip",
-		Style:    discordgo.DangerButton,
-		CustomID: "vote_skip",
-	})
+        if len(buttons) == 5 {
+            components = append(components, discordgo.ActionsRow{Components: buttons})
+            buttons = []discordgo.MessageComponent{}
+        }
+    }
 
-	msg, err := s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
-		Content: playerList + "\n🗳 **Silakan pilih pemain yang mencurigakan!**",
-		Components: []discordgo.MessageComponent{
-			discordgo.ActionsRow{Components: buttons},
-		},
-	})
-	if err != nil {
+    if len(buttons) > 0 {
+        components = append(components, discordgo.ActionsRow{Components: buttons})
+        buttons = []discordgo.MessageComponent{}
+    }
+
+    buttons = append(buttons, discordgo.Button{
+        Label:    "Skip",
+        Style:    discordgo.SecondaryButton,
+        CustomID: "vote_skip",
+    })
+
+    if len(buttons) == 5 {
+        components = append(components, discordgo.ActionsRow{Components: buttons})
+        buttons = []discordgo.MessageComponent{}
+    }
+
+    buttons = append(buttons, discordgo.Button{
+        Label:    "Close Vote",
+        Style:    discordgo.DangerButton,
+        CustomID: "vote_close",
+    })
+
+    if len(buttons) > 0 {
+        components = append(components, discordgo.ActionsRow{Components: buttons})
+    }
+
+    msg, err := s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
+        Content: playerList + "\n🗳 **Silakan pilih aksi berikut!**",
+        Components: components,
+    })
+    
+    if err != nil {
         fmt.Println("Gagal mengirim pesan:", err)
-        return
     }
 
 	lastVoteMessageID = msg.ID
@@ -118,6 +143,17 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
     userID := i.Member.User.ID
     voteTarget := strings.TrimPrefix(prefix, "vote_")
 
+    if voteTarget == "close" && userID != models.ActiveGame.HostID {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: "❌ Hanya host yang bisa melakukan close vote.",
+                Flags:   discordgo.MessageFlagsEphemeral,
+            },
+        })
+        return
+    }
+
     if models.ActiveGame == nil || !models.ActiveGame.Started {
         return
     }
@@ -133,19 +169,24 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
         return
     }
 
-    if _, voted := playerVotes[userID]; voted {
-        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-            Type: discordgo.InteractionResponseChannelMessageWithSource,
-            Data: &discordgo.InteractionResponseData{
-                Content: "❌ Kamu sudah memilih! Tidak bisa memilih lagi.",
-                Flags:   discordgo.MessageFlagsEphemeral,
-            },
-        })
-        return
+    if voteTarget != "close" {
+        if _, voted := playerVotes[userID]; voted {
+            s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+                Type: discordgo.InteractionResponseChannelMessageWithSource,
+                Data: &discordgo.InteractionResponseData{
+                    Content: "❌ Kamu sudah memilih! Tidak bisa memilih lagi.",
+                    Flags:   discordgo.MessageFlagsEphemeral,
+                },
+            })
+            return
+        }
     }
 
     playerVotes[userID] = voteTarget
     voteCount[voteTarget]++
+    if voteTarget == "close" {
+        voteStatus = false
+    }
 
     s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
         Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -254,10 +295,29 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
         }
     } else {
         voteResults := "📊 **Game Berakhir**\n"
-        s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
         playerVotes = make(map[string]string)
         voteCount = make(map[string]int)
         voteMessageID = ""
+
+        msg := &discordgo.MessageSend{
+            Content: voteResults,
+            Components: []discordgo.MessageComponent{
+                discordgo.ActionsRow{
+                    Components: []discordgo.MessageComponent{
+                        discordgo.Button{
+                            Label:    "Play Again",
+                            Style:    discordgo.PrimaryButton,
+                            CustomID: "play_again",
+                        },
+                    },
+                },
+            },
+        }
+
+        s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
+            Content: msg.Content,
+            Components: msg.Components,
+        })
     }
 }
 
@@ -269,32 +329,57 @@ func SendVotingMessage(s *discordgo.Session,i *discordgo.InteractionCreate, chan
     }
 
     CloseVoting(s,i, channelID)
-	fmt.Println(lastVoteMessageID)
 
     playerList := "📜 **Daftar Pemain yang Masih Hidup:**\n"
+    var components []discordgo.MessageComponent
     var buttons []discordgo.MessageComponent
-
+    
     for _, p := range models.ActiveGame.Players {
         playerList += fmt.Sprintf("- <@%s>\n", p.ID)
+    
         buttons = append(buttons, discordgo.Button{
             Label:    p.Username,
             Style:    discordgo.PrimaryButton,
             CustomID: "vote_" + p.ID,
         })
+
+        if len(buttons) == 5 {
+            components = append(components, discordgo.ActionsRow{Components: buttons})
+            buttons = []discordgo.MessageComponent{}
+        }
+    }
+
+    if len(buttons) > 0 {
+        components = append(components, discordgo.ActionsRow{Components: buttons})
+        buttons = []discordgo.MessageComponent{}
     }
 
     buttons = append(buttons, discordgo.Button{
         Label:    "Skip",
-        Style:    discordgo.DangerButton,
+        Style:    discordgo.SecondaryButton,
         CustomID: "vote_skip",
     })
 
-    s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
-        Content: playerList + "\n🗳 **Silakan pilih pemain yang mencurigakan!**",
-        Components: []discordgo.MessageComponent{
-            discordgo.ActionsRow{Components: buttons},
-        },
+    if len(buttons) == 5 {
+        components = append(components, discordgo.ActionsRow{Components: buttons})
+        buttons = []discordgo.MessageComponent{}
+    }
+
+    buttons = append(buttons, discordgo.Button{
+        Label:    "Close Vote",
+        Style:    discordgo.DangerButton,
+        CustomID: "vote_close",
     })
+
+    if len(buttons) > 0 {
+        components = append(components, discordgo.ActionsRow{Components: buttons})
+    }
+
+    s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
+        Content: playerList + "\n🗳 **Silakan pilih aksi berikut!**",
+        Components: components,
+    })
+    
 }
 
 func CloseVoting(s *discordgo.Session,i *discordgo.InteractionCreate, channelID string) {

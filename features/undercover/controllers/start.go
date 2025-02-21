@@ -121,5 +121,9 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
         if data.CustomID == "quit_game" {
             QuitGame(s, i)
         }
+
+        if data.CustomID == "play_again" {
+            Playagain(s, i)
+        }
     }
 }
