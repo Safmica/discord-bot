@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 
 	models "github.com/Safmica/discord-bot/features/undercover"
 	"github.com/bwmarrin/discordgo"
@@ -107,7 +108,12 @@ var playerVotes = make(map[string]string)
 var voteCount = make(map[string]int)
 var voteMessageID string
 
+var voteLock sync.Mutex
+
 func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix string) {
+    voteLock.Lock()
+    defer voteLock.Unlock()
+
     userID := i.Member.User.ID
     voteTarget := strings.TrimPrefix(prefix, "vote_")
 
@@ -140,6 +146,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
     playerVotes[userID] = voteTarget
     voteCount[voteTarget]++
 
+    gameEnded := false
     if len(playerVotes) == len(models.ActiveGame.Players) {
         maxVotes := 0
         voteLeaders := []string{}
@@ -165,7 +172,6 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
         }
 
         civilianCount, undercoverCount := 0, 0
-
         for _, player := range models.ActiveGame.Players {
             if player.Role == models.Civilian {
                 civilianCount++
@@ -175,8 +181,6 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
         }
 
         var endMessage string
-        gameEnded := false
-
         if undercoverCount == 0 {
             endMessage = "🎉 **Civilian menang!** Semua Undercover telah dieliminasi."
             gameEnded = true
@@ -190,7 +194,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
             s.ChannelMessageSend(i.Interaction.ChannelID, endMessage)
         } else {
             s.ChannelMessageSend(i.Interaction.ChannelID, eliminationMessage)
-            SendVotingMessage(s, i,i.Interaction.ChannelID)
+            SendVotingMessage(s, i, i.Interaction.ChannelID)
         }
 
         playerVotes = make(map[string]string)
@@ -198,30 +202,39 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
         voteMessageID = ""
     }
 
-    voteResults := "📊 **Hasil Voting Sementara:**\n"
-    for playerID, count := range voteCount {
-        voteResults += fmt.Sprintf("- <@%s>: %d suara\n", playerID, count)
-    }
-
-    if voteMessageID != "" {
-        _, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteMessageID, voteResults)
-        if err != nil {
-            fmt.Println("Gagal mengedit pesan voting:", err)
+    if !gameEnded {
+        voteResults := "📊 **Hasil Voting Sementara:**\n"
+        for playerID, count := range voteCount {
+            if playerID == "skip" {
+                voteResults += fmt.Sprintf("- %s: %d suara\n", playerID, count)
+            } else {
+                voteResults += fmt.Sprintf("- <@%s>: %d suara\n", playerID, count)
+            }
         }
+
+        if voteMessageID != "" {
+            _, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteMessageID, voteResults)
+            if err != nil {
+                fmt.Println("Gagal mengedit pesan voting:", err)
+            }
+        } else {
+            msg, err := s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
+            if err == nil {
+                voteMessageID = msg.ID
+            }
+        }
+
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: fmt.Sprintf("✅ <@%s>Vote kamu telah dicatat!", userID),
+                Flags:   discordgo.MessageFlagsEphemeral,
+            },
+        })
     } else {
-        msg, err := s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
-        if err == nil {
-            voteMessageID = msg.ID
-        }
+         voteResults := "📊 **Game Berakhir**\n"
+        s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
     }
-
-    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-        Type: discordgo.InteractionResponseChannelMessageWithSource,
-        Data: &discordgo.InteractionResponseData{
-            Content: "✅ Vote kamu telah dicatat!",
-            Flags:   discordgo.MessageFlagsEphemeral,
-        },
-    })
 }
 
 var lastVoteMessageID string
