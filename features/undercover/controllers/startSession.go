@@ -255,6 +255,9 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
     } else {
         voteResults := "📊 **Game Berakhir**\n"
         s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
+        playerVotes = make(map[string]string)
+        voteCount = make(map[string]int)
+        voteMessageID = ""
     }
 }
 
