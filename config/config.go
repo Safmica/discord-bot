@@ -17,6 +17,7 @@ func ReadConfig() error {
 
 	Config.Token = os.Getenv("TOKEN")
 	Config.BotPrefix = os.Getenv("BOT_PREFIX")
+	Config.Undercover = os.Getenv("UNDERCOVER_WORDS")
 
 	return nil
 }

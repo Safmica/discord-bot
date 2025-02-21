@@ -130,5 +130,9 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
         if data.CustomID == "play_again" {
             Playagain(s, i)
         }
+
+        if data.CustomID == "view_secret_word" {
+            ViewSecretWord(s, i)
+        }
     }
 }

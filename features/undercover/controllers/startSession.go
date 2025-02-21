@@ -1,11 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"strings"
 	"sync"
 
+	"github.com/Safmica/discord-bot/config"
 	models "github.com/Safmica/discord-bot/features/undercover"
 	"github.com/bwmarrin/discordgo"
 )
@@ -36,8 +39,19 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	rand.Shuffle(len(players), func(i, j int) { players[i], players[j] = players[j], players[i] })
 
-	civilianWord := "Apple"
-	undercoverWord := "Orange"
+    data, err := os.ReadFile(config.Config.Undercover)
+	if err != nil {
+		return
+	}
+
+    var wordData models.WordData
+	err = json.Unmarshal(data, &wordData)
+	if err != nil {
+		return 
+	}
+
+    models.ActiveGame.Words = wordData.Words
+
 
 	for i := 0; i < models.ActiveGame.Undercover; i++ {
 		players[i].Role = models.Undercover
@@ -47,33 +61,33 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		players[i].Role = models.Civilian
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: "🚀 Game telah dimulai! Peranmu akan dikirim secara rahasia melalui DM.",
-		},
-	})
+    if !AssignRandomWords() {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: "Semua kata sudah digunakan 😭.",
+            },
+        })
+        return
+    }
 
-	for _, p := range players {
-		word := ""
-		switch p.Role {
-		case models.Civilian:
-			word = civilianWord
-		case models.Undercover:
-			word = undercoverWord
-		}
-
-		dmChannel, err := s.UserChannelCreate(p.ID)
-		if err != nil {
-			fmt.Println("Gagal membuat DM channel:", err)
-			continue
-		}
-
-		_, err = s.ChannelMessageSend(dmChannel.ID, fmt.Sprintf("🔐 **Kata Rahasia Kamu:** %s", word))
-		if err != nil {
-			fmt.Println("Gagal mengirim DM:", err)
-		}
-	}
+    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+        Type: discordgo.InteractionResponseChannelMessageWithSource,
+        Data: &discordgo.InteractionResponseData{
+            Content: "🎮 **Game Dimulai!** Tekan tombol di bawah untuk melihat kata rahasiamu!",
+            Components: []discordgo.MessageComponent{
+                discordgo.ActionsRow{
+                    Components: []discordgo.MessageComponent{
+                        discordgo.Button{
+                            Label:    "View Your Secret Word",
+                            Style:    discordgo.PrimaryButton,
+                            CustomID: "view_secret_word",
+                        },
+                    },
+                },
+            },
+        },
+    })
 
     playerList := "📜 **Daftar Pemain:**\n"
     var components []discordgo.MessageComponent
@@ -405,4 +419,36 @@ func CloseVoting(s *discordgo.Session,i *discordgo.InteractionCreate, channelID 
 		}
 		lastVoteMessageID = "" 
 	}
+}
+
+func ViewSecretWord(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    userID := i.Member.User.ID
+    player, exists := models.ActiveGame.Players[userID]
+    if !exists {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: "⛔ Kamu tidak terdaftar dalam game ini!",
+                Flags:   discordgo.MessageFlagsEphemeral,
+            },
+        })
+        return
+    }
+
+    var word string
+    switch player.Role {
+    case models.Civilian:
+        word = models.ActiveGame.CivilianWords
+    case models.Undercover:
+        word = models.ActiveGame.UndercoverWords
+    }
+
+
+    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+        Type: discordgo.InteractionResponseChannelMessageWithSource,
+        Data: &discordgo.InteractionResponseData{
+            Content: fmt.Sprintf("🔐 **Kata Rahasia Kamu:** %s", word),
+            Flags:   discordgo.MessageFlagsEphemeral,
+        },
+    })
 }
