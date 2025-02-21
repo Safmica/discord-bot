@@ -165,8 +165,12 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 
         if len(voteLeaders) == 1 {
             eliminatedPlayerID = voteLeaders[0]
-            delete(models.ActiveGame.Players, eliminatedPlayerID)
-            eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
+            if eliminatedPlayerID != "skip" {
+                delete(models.ActiveGame.Players, eliminatedPlayerID)
+                eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
+            } else {
+                eliminationMessage = "🤷‍♂️ Pemain memilih skip! Tidak ada yang dieliminasi."
+            }
         } else {
             eliminationMessage = "⚖️ Hasil voting seri! Tidak ada yang dieliminasi."
         }
@@ -203,6 +207,14 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
     }
 
     if !gameEnded {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: fmt.Sprintf("✅ <@%s>Vote kamu telah dicatat!", userID),
+                Flags:   discordgo.MessageFlagsEphemeral,
+            },
+        })
+        
         voteResults := "📊 **Hasil Voting Sementara:**\n"
         for playerID, count := range voteCount {
             if playerID == "skip" {
@@ -223,14 +235,6 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
                 voteMessageID = msg.ID
             }
         }
-
-        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-            Type: discordgo.InteractionResponseChannelMessageWithSource,
-            Data: &discordgo.InteractionResponseData{
-                Content: fmt.Sprintf("✅ <@%s>Vote kamu telah dicatat!", userID),
-                Flags:   discordgo.MessageFlagsEphemeral,
-            },
-        })
     } else {
          voteResults := "📊 **Game Berakhir**\n"
         s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
