@@ -89,12 +89,12 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
         },
     })
 
-    playerList := "📜 **Daftar Pemain:**\n"
+    playerList := "📜 **Urutan Bermain:**\n"
     var components []discordgo.MessageComponent
     var buttons []discordgo.MessageComponent
 
-    for _, p := range players {
-        playerList += fmt.Sprintf("- <@%s>\n", p.ID)
+    for i, p := range players {
+        playerList += fmt.Sprintf("%d. <@%s>\n",i+1, p.ID)
     
         buttons = append(buttons, discordgo.Button{
             Label:    p.Username,
@@ -353,12 +353,15 @@ func SendVotingMessage(s *discordgo.Session,i *discordgo.InteractionCreate, chan
 
     CloseVoting(s,i, channelID)
 
-    playerList := "📜 **Daftar Pemain yang Masih Hidup:**\n"
+    playerList := "📜 **Urutan Bermain:**\n"
     var components []discordgo.MessageComponent
     var buttons []discordgo.MessageComponent
+    number := 1
     
     for _, p := range models.ActiveGame.Players {
-        playerList += fmt.Sprintf("- <@%s>\n", p.ID)
+
+        playerList += fmt.Sprintf("%d. <@%s>\n",number, p.ID)
+        number++
     
         buttons = append(buttons, discordgo.Button{
             Label:    p.Username,
