@@ -68,6 +68,11 @@ func sendMessageWithButtons(game *models.GameSession, s *discordgo.Session, m *d
                         Style:    discordgo.SuccessButton,
                         CustomID: "start_game",
                     },
+                    discordgo.Button{
+                        Label:    "Quit Game",
+                        Style:    discordgo.DangerButton,
+                        CustomID: "quit_game",
+                    },
                 },
             },
         },
@@ -111,6 +116,10 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
         if strings.HasPrefix(data.CustomID, "vote_") {
             HandleVote(s, i, data.CustomID)
+        }
+
+        if data.CustomID == "quit_game" {
+            QuitGame(s, i)
         }
     }
 }
