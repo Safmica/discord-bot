@@ -7,6 +7,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+var lastJoinMessageID string
+
 func JoinGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
     if models.ActiveGame == nil {
         s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -36,11 +38,26 @@ func JoinGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
         return
     }
 
+    s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+        Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+    })
+
     models.ActiveGame.Players[userID] = &models.Player{
         ID:       userID,
         Username: username,
         Role:     "",
     }
 
-	updateGameMessage(s, i.ChannelID, i.Message.ID)
+    updateGameMessage(s, i.ChannelID, i.Message.ID)
+
+    content := fmt.Sprintf("🎮 %s telah bergabung dalam game!", username)
+
+    if lastJoinMessageID == "" {
+        msg, _ := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+            Content: content,
+        })
+        lastJoinMessageID = msg.ID
+    } else {
+        s.ChannelMessageEdit(i.ChannelID, lastJoinMessageID, content)
+    }
 }
