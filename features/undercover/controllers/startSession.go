@@ -222,8 +222,14 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
         if  len(voteLeaders) == 1  {
             eliminatedPlayerID = voteLeaders[0]
             if eliminatedPlayerID != "skip" {
-                delete(models.ActiveGame.Players, eliminatedPlayerID)
-                eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
+                if models.ActiveGame.ShowRoles {
+                    elimnatedPlayer := models.ActiveGame.Players[eliminatedPlayerID]
+                    delete(models.ActiveGame.Players, eliminatedPlayerID)
+                    eliminationMessage = fmt.Sprintf("☠️ **<@%s> telah dieliminasi! Dan dia merupakan _%s_**", eliminatedPlayerID, elimnatedPlayer.Role)
+                } else {
+                    delete(models.ActiveGame.Players, eliminatedPlayerID)
+                    eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
+                }
             } else {
                 eliminationMessage = "🤷‍♂️ Pemain memilih skip! Tidak ada yang dieliminasi."
             }

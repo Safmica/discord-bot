@@ -29,38 +29,46 @@ func ConfigUndercover(s *discordgo.Session, m *discordgo.MessageCreate, args str
 	}
 
 	config := strings.Fields(args)
-	if config[0] == "undercover" {
-		if config[0] == "undercover" {
-			undercover, err := strconv.Atoi(config[1])
-			if err != nil {
-				s.ChannelMessageSend(m.ChannelID, "⛔ Input tidak valid! Harap masukkan angka.")
-				return
-			}
-		
-			if undercover < 0 {
-				undercover = -undercover
-			}
-		
-			totalPlayers := len(models.ActiveGame.Players)
-			if totalPlayers == 0 {
-				s.ChannelMessageSend(m.ChannelID, "⛔ Tidak ada pemain dalam game!")
-				return
-			}
-		
-			maxUndercover := totalPlayers / 4 
-		
-			if undercover > maxUndercover {
-				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("⛔ Jumlah Undercover terlalu banyak! Maksimal %d dari %d pemain.", maxUndercover, totalPlayers))
-				return
-			}
-
-			if undercover == 0 {
-				s.ChannelMessageSend(m.ChannelID, "⛔ Harus ada minimal 1 undercover")
-				return
-			}
-		
-			models.ActiveGame.Undercover = undercover
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅ Jumlah Undercover diatur menjadi %d.", undercover))
+	switch config[0] {
+	case "undercover" :
+		undercover, err := strconv.Atoi(config[1])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "⛔ Input tidak valid! Harap masukkan angka.")
+			return
 		}
+	
+		if undercover < 0 {
+			undercover = -undercover
+		}
+	
+		totalPlayers := len(models.ActiveGame.Players)
+		if totalPlayers == 0 {
+			s.ChannelMessageSend(m.ChannelID, "⛔ Tidak ada pemain dalam game!")
+			return
+		}
+	
+		maxUndercover := totalPlayers / 4 
+	
+		if undercover > maxUndercover {
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("⛔ Jumlah Undercover terlalu banyak! Maksimal %d dari %d pemain.", maxUndercover, totalPlayers))
+			return
+		}
+
+		if undercover == 0 {
+			s.ChannelMessageSend(m.ChannelID, "⛔ Harus ada minimal 1 undercover")
+			return
+		}
+	
+		models.ActiveGame.Undercover = undercover
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅ Jumlah Undercover diatur menjadi %d.", undercover))
+	case "showroles":
+		showroles, err := strconv.ParseBool(config[1])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "⛔ Harus berisi true or false")
+			return
+		}
+	
+		models.ActiveGame.ShowRoles = showroles
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅ Showroles diatur menjadi %t.", showroles))
 	}
 }
