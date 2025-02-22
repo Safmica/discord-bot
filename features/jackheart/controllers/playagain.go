@@ -20,5 +20,7 @@ func Playagain(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Started: false,
 	}
 
+	gameStatus = true
+
 	sendMessageWithButtons(models.ActiveGame, s, nil, i, "🎮 Game Jackheart telah dimulai! Klik tombol di bawah untuk bergabung.")
 }

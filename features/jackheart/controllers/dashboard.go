@@ -9,9 +9,20 @@ import (
 )
 var playerReady = 0
 func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("🚨 Recovered from panic:", r)
+		}
+	}()
+	
+	if models.ActiveGame == nil || !gameStatus {
+		return
+	}
+
 	userID := i.Member.User.ID
+
 	player, exists := models.ActiveGame.Players[userID]
-	if !exists {
+	if !exists || player == nil {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -22,7 +33,11 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	if player.Symbol == ""{
+	if player.Symbol == "" {
+		if len(models.Symbols) == 0 {
+			fmt.Println("❌ ERROR: models.Symbols kosong!")
+			return
+		}
 		rand.Shuffle(len(models.Symbols), func(i, j int) { models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i] })
 		player.Symbol = models.Symbols[0]
 	}
@@ -35,8 +50,7 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	if player.DashboardID != "" {
-		err := s.FollowupMessageDelete(i.Interaction, player.DashboardID)
-		if err != nil {
+		if err := s.FollowupMessageDelete(i.Interaction, player.DashboardID); err != nil {
 			fmt.Println("Gagal menghapus pesan lama:", err)
 		}
 	}
@@ -58,14 +72,15 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		fmt.Println("Gagal mengirim pesan follow-up:", err)
 		return
 	}
-	
+
+	// ✅ Simpan ID dashboard baru
 	player.DashboardID = msg.ID
 	playerReady++
-	
-	if playerReady == len(models.ActiveGame.Players) && Phase == "finish"{
+
+	// ✅ Pastikan fase dan jumlah pemain sesuai sebelum lanjut
+	if playerReady == len(models.ActiveGame.Players) && Phase == "finish" {
 		fmt.Println(player.Symbol)
 		playerReady = 0
 		startTurnBasedVoting(s, i.ChannelID)
 	}
 }
-

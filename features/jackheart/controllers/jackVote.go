@@ -82,6 +82,10 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 		if len(voteLeaders) == 1 {
 			eliminatedPlayerID = voteLeaders[0]
 			if eliminatedPlayerID != "skip" {
+				if eliminatedPlayerID == models.ActiveGame.Jackheart{
+					gameStatus = false
+					roles = "pawn"
+				}
 				delete(models.ActiveGame.Players, eliminatedPlayerID)
 				eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
 			} else {

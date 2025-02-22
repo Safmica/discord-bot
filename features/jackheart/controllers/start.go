@@ -22,6 +22,8 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
         Started: false,
     }
 
+    gameStatus = true
+
     content :=  "🎮 **Game Jackheart telah dimulai! Klik tombol di bawah untuk bergabung**"
 
     sendMessageWithButtons(models.ActiveGame, s, m, i, content)
@@ -127,8 +129,10 @@ func JackheartHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
         if strings.HasPrefix(data.CustomID, "jackheart_vote_") {
             HandleVote(s, i, data.CustomID)
-            ShowVote(s,i)
-            Dashboard(s,i)
+            if models.ActiveGame != nil {
+                ShowVote(s,i)
+                Dashboard(s,i)
+            }
         }
 
         if strings.HasPrefix(data.CustomID, "jack_vote_") {

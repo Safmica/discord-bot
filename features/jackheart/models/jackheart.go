@@ -36,6 +36,7 @@ type GameSession struct {
 	Started       bool
 	HostID        string
 	GameMessageID string
+	Jackheart     string
 	VotingID      string
 	MaxPoints     int
 	Mutex         sync.Mutex

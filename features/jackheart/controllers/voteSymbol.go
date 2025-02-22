@@ -18,13 +18,14 @@ var voteMessageID = ""
 var gameStatus = true
 var skipTimer = make(chan struct{})
 var phaseNumver = 1
-
+var roles = "jackheart"
 
 func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 	activeGame := models.ActiveGame
 	players := activeGame.Players
 
 	for gameStatus {
+		s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**",phaseNumver))
 		phaseNumver++
 		for _, player := range players {
 			Phase = "ongoing"
@@ -103,62 +104,117 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			}
 		}
 
+		jackHeart := false
 		for _, player := range models.ActiveGame.Players {
 			player.Symbol = ""
 			player.SymbolVoted = ""
+			if player.Points >= models.ActiveGame.MaxPoints {
+				gameStatus = false
+				roles = string(player.Role)
+			}
+			if player.ID == models.ActiveGame.Jackheart {
+				jackHeart = true
+			}
 		}
 
-		var components []discordgo.MessageComponent
-		var buttons []discordgo.MessageComponent
+		if !jackHeart {
+			gameStatus = false
+			roles = "pawn"
+		}
 
-		for _, p := range players {
-	
+		if gameStatus {
+			var components []discordgo.MessageComponent
+			var buttons []discordgo.MessageComponent
+
+			for _, p := range players {
+		
+				buttons = append(buttons, discordgo.Button{
+					Label:    p.Username,
+					Style:    discordgo.PrimaryButton,
+					CustomID: "jack_vote_" + p.ID,
+				})
+		
+				if len(buttons) == 5 {
+					components = append(components, discordgo.ActionsRow{Components: buttons})
+					buttons = []discordgo.MessageComponent{}
+				}
+			}
+		
+			if len(buttons) > 0 {
+				components = append(components, discordgo.ActionsRow{Components: buttons})
+				buttons = []discordgo.MessageComponent{}
+			}
+		
 			buttons = append(buttons, discordgo.Button{
-				Label:    p.Username,
-				Style:    discordgo.PrimaryButton,
-				CustomID: "jack_vote_" + p.ID,
+				Label:    "Skip",
+				Style:    discordgo.SecondaryButton,
+				CustomID: "jack_vote_skip",
 			})
-	
+		
 			if len(buttons) == 5 {
 				components = append(components, discordgo.ActionsRow{Components: buttons})
 				buttons = []discordgo.MessageComponent{}
 			}
-		}
-	
-		if len(buttons) > 0 {
-			components = append(components, discordgo.ActionsRow{Components: buttons})
-			buttons = []discordgo.MessageComponent{}
-		}
-	
-		buttons = append(buttons, discordgo.Button{
-			Label:    "Skip",
-			Style:    discordgo.SecondaryButton,
-			CustomID: "jack_vote_skip",
-		})
-	
-		if len(buttons) == 5 {
-			components = append(components, discordgo.ActionsRow{Components: buttons})
-			buttons = []discordgo.MessageComponent{}
-		}
-	
-		if len(buttons) > 0 {
-			components = append(components, discordgo.ActionsRow{Components: buttons})
-		}
-	
-		msg, err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
-			Content:    message,
-			Components: components,
-		})
-	
-		if err != nil {
-			fmt.Println("Gagal mengirim pesan:", err)
-		}
-	
-		lastVoteMessageID = msg.ID
+		
+			if len(buttons) > 0 {
+				components = append(components, discordgo.ActionsRow{Components: buttons})
+			}
+		
+			_, err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
+				Content:    message,
+				Components: components,
+			})
+		
+			if err != nil {
+				fmt.Println("Gagal mengirim pesan:", err)
+			}
 
-		StartVotingCountdown(s)
-		s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**",phaseNumver))
-		time.Sleep(5 * time.Second)
+			if !gameStatus {
+				goto EndGame
+			}
+
+			StartVotingCountdown(s)
+			time.Sleep(1 * time.Second)
+		}
+
+		EndGame:
+		if !gameStatus {
+			message := ""
+			if roles == "pawn" {
+				message = fmt.Sprintf("**🎊Pion Menang! Jackheart adalah <@%s>🎉**", models.ActiveGame.Jackheart)
+			} else {
+				message = fmt.Sprintf("**🎊Jackheart Menang! Jackheart adalah <@%s>🎉**", models.ActiveGame.Jackheart)
+			}
+			msg := &discordgo.MessageSend{
+				Content: message,
+				Components: []discordgo.MessageComponent{
+					discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{
+							discordgo.Button{
+								Label:    "Play Again",
+								Style:    discordgo.PrimaryButton,
+								CustomID: "play_again_jackheart",
+							},
+						},
+					},
+				},
+			}
+			models.ActiveGame = nil
+			phaseNumver = 1
+			Phase = "finish"
+			voteMessageID = ""
+			gameStatus = false
+			playerVotes = make(map[string]string)
+			playerReady = 0
+			jackVotes = make(map[string]string)
+			voteCount = make(map[string]int)
+			voteJackMessageID = ""
+			playersVotes = 0
+			s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+				Content:    msg.Content,
+				Components: msg.Components,
+			})
+		}
 	}
 }
 
@@ -206,7 +262,9 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	models.ActiveGame.Players[voterID].Points--
+	if voter.ID != players.ID {
+		models.ActiveGame.Players[voterID].Points--
+	}
 
 	symbol := ""
 	switch players.Symbol {
@@ -227,9 +285,9 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	buttons := []discordgo.MessageComponent{
 		discordgo.Button{Label: "Heart ❤️", Style: discordgo.SecondaryButton, CustomID: "jackheart_vote_heart"},
-		discordgo.Button{Label: "Spade ♠️", Style: discordgo.DangerButton, CustomID: "jackheart_vote_spade"},
-		discordgo.Button{Label: "Diamond ♦️", Style: discordgo.DangerButton, CustomID: "jackheart_vote_diamond"},
-		discordgo.Button{Label: "Club ♣️", Style: discordgo.DangerButton, CustomID: "jackheart_vote_club"},
+		discordgo.Button{Label: "Spade ♠️", Style: discordgo.SecondaryButton, CustomID: "jackheart_vote_spade"},
+		discordgo.Button{Label: "Diamond ♦️", Style: discordgo.SecondaryButton, CustomID: "jackheart_vote_diamond"},
+		discordgo.Button{Label: "Club ♣️", Style: discordgo.SecondaryButton, CustomID: "jackheart_vote_club"},
 	}
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
