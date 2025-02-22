@@ -10,6 +10,8 @@ import (
 
 var jackVotes = make(map[string]string)
 var voteCount = make(map[string]int)
+var voteJackMessageID = ""
+var playersVotes = 0
 
 func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix string) {
 	voteStatus = true
@@ -17,7 +19,7 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 	defer voteLock.Unlock()
 
 	userID := i.Member.User.ID
-	voteTarget := strings.TrimPrefix(prefix, "vote_")
+	voteTarget := strings.TrimPrefix(prefix, "jack_vote_")
 
 	if models.ActiveGame == nil || !models.ActiveGame.Started {
 		return
@@ -47,6 +49,7 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 
 	jackVotes[userID] = voteTarget
 	voteCount[voteTarget]++
+	playersVotes++
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -55,6 +58,10 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
+
+	if playersVotes == len(models.ActiveGame.Players) {
+		voteStatus = false
+	}
 
 	if !voteStatus {
 		maxVotes := 0
@@ -84,8 +91,10 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 			eliminationMessage = "⚖️ Hasil voting seri! Tidak ada yang dieliminasi."
 		}
 
+		jackVotes = make(map[string]string)
+		voteCount = make(map[string]int)
+		voteJackMessageID = ""
 		s.ChannelMessageSend(i.Interaction.ChannelID, eliminationMessage)
-		SendVotingMessage(s, i, i.Interaction.ChannelID)
 	} else {
 		var voteResults string
 		voteResults = "📊 **Hasil Voting Sementara:**\n"
@@ -97,31 +106,15 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 			}
 		}
 
-		if voteMessageID != "" && voteStatus {
-			_, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteMessageID, voteResults)
+		if voteJackMessageID != "" && voteStatus {
+			_, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteJackMessageID, voteResults)
 			if err != nil {
 				fmt.Println("Gagal mengedit pesan voting:", err)
 			}
-		} else if voteMessageID != "" && !voteStatus {
-			voteResults = "📊 **Hasil Voting Akhir:**\n"
-			for playerID, count := range voteCount {
-				if playerID == "skip" {
-					voteResults += fmt.Sprintf("- %s: %d suara\n", playerID, count)
-				} else {
-					voteResults += fmt.Sprintf("- <@%s>: %d suara\n", playerID, count)
-				}
-			}
-			_, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteMessageID, voteResults)
-			if err != nil {
-				fmt.Println("Gagal mengedit pesan voting:", err)
-			}
-			jackVotes = make(map[string]string)
-			voteCount = make(map[string]int)
-			voteMessageID = ""
 		} else {
 			msg, err := s.ChannelMessageSend(i.Interaction.ChannelID, voteResults)
 			if err == nil {
-				voteMessageID = msg.ID
+				voteJackMessageID = msg.ID
 			}
 		}
 	} 
