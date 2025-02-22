@@ -127,6 +127,7 @@ func JackheartHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
         if strings.HasPrefix(data.CustomID, "jackheart_vote_") {
             HandleVote(s, i, data.CustomID)
+            ShowVote(s,i)
             Dashboard(s,i)
         }
 
