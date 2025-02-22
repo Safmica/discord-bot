@@ -13,7 +13,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	playerCount := len(models.ActiveGame.Players)
-	if playerCount < 0 {
+	if playerCount < 4 {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
