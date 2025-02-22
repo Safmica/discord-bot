@@ -14,90 +14,115 @@ import (
 var playerVotes = make(map[string]string)
 var voteStatus bool
 var voteLock sync.Mutex
-var voteMessageID = ""
 var showVotingID = ""
 var Phase = "finish"
+var voteMessageID = ""
+var gameStatus = true
 
 func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 	activeGame := models.ActiveGame
 	players := activeGame.Players
 
-	for _, player := range players {
-		Phase = "ongoing"
-		models.ActiveGame.NowPlaying = player.ID
-		voteStatus = true
+	for gameStatus {
+		for _, player := range players {
+			Phase = "ongoing"
+			models.ActiveGame.NowPlaying = player.ID
+			voteStatus = true
 
-		content := fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu 30 detik**\n _Selain <@%s>, voting bersifat opsional_", player.ID, player.ID)
+			content := fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu 30 detik**\n _Selain <@%s>, voting bersifat opsional_", player.ID, player.ID)
 
-		msg, err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
-			Content: content,
-			Components: []discordgo.MessageComponent{
-				discordgo.ActionsRow{Components: []discordgo.MessageComponent{
-					discordgo.Button{
-						Label:    "Vote Symbol",
-						Style:    discordgo.PrimaryButton,
-						CustomID: "jackheart_view_vote_symbol",
-					},
-				}},
-			},
-		})
-		if err != nil {
-			fmt.Println("Gagal mengirim pesan:", err)
-			return
-		}
-		models.ActiveGame.VotingID = msg.ID
-		voteMessageID = models.ActiveGame.VotingID
-
-		for i := 29; i >= 0; i-- {
-			if !voteStatus {
-				break
-			}
-
-			time.Sleep(1 * time.Second)
-
-			voteResults := "📜 **Hasil Voting Sementara:**\n"
-			for player, symbol := range playerVotes {
-				voteResults += fmt.Sprintf("- <@%s> memilih **%s**\n", player, symbol)
-			}
-
-			content = fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu %d detik**\n _Selain <@%s>, voting bersifat opsional_\n\n%s",
-				player.ID, i, player.ID, voteResults)
-
-			s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-				ID:      voteMessageID,
-				Channel: channelID,
-				Content: &content,
-				Components: &[]discordgo.MessageComponent{
+			msg, err := s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+				Content: content,
+				Components: []discordgo.MessageComponent{
 					discordgo.ActionsRow{Components: []discordgo.MessageComponent{
 						discordgo.Button{
 							Label:    "Vote Symbol",
 							Style:    discordgo.PrimaryButton,
 							CustomID: "jackheart_view_vote_symbol",
 						},
-					}},
-				},
-			})
-		}
-		content = fmt.Sprintf("🛑 **Voting untuk <@%s> telah berakhir!**", player.ID)
-		s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-			ID:         voteMessageID,
-			Channel:    channelID,
-			Content:    &content,
-			Components: &[]discordgo.MessageComponent{},
-		})
-		playerVotes = make(map[string]string)
-	}
-	Phase = "finish"
+					}}}})
 
-	for id, player := range models.ActiveGame.Players {
-		rand.Shuffle(len(models.Symbols), func(i, j int) {
-			models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i]
-		})
-		player.Symbol = models.Symbols[0]
-		models.ActiveGame.Players[id] = player
+			if err != nil {
+				fmt.Println("Gagal mengirim pesan:", err)
+				return
+			}
+			models.ActiveGame.VotingID = msg.ID
+			voteMessageID = models.ActiveGame.VotingID
+
+			for i := 29; i >= 0; i-- {
+				if !voteStatus {
+					break
+				}
+
+				time.Sleep(1 * time.Second)
+
+				voteResults := "📜 **Hasil Voting Sementara:**\n"
+				for player, symbol := range playerVotes {
+					voteResults += fmt.Sprintf("- <@%s> memilih **%s**\n", player, symbol)
+				}
+
+				content = fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu %d detik**\n _Selain <@%s>, voting bersifat opsional_\n\n%s",
+					player.ID, i, player.ID, voteResults)
+
+				s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+					ID:      voteMessageID,
+					Channel: channelID,
+					Content: &content,
+					Components: &[]discordgo.MessageComponent{
+						discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+							discordgo.Button{
+								Label:    "Vote Symbol",
+								Style:    discordgo.PrimaryButton,
+								CustomID: "jackheart_view_vote_symbol",
+							},
+						}}}})
+			}
+
+			content = fmt.Sprintf("🛑 **Voting untuk <@%s> telah berakhir!**", player.ID)
+			s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+				ID:         voteMessageID,
+				Channel:    channelID,
+				Content:    &content,
+				Components: &[]discordgo.MessageComponent{},
+			})
+			playerVotes = make(map[string]string)
+		}
+
+		Phase = "finish"
+
+		// Reset simbol pemain setelah fase selesai
+		for id, player := range models.ActiveGame.Players {
+			rand.Shuffle(len(models.Symbols), func(i, j int) {
+				models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i]
+			})
+			player.Symbol = models.Symbols[0]
+			models.ActiveGame.Players[id] = player
+		}
+
+		message := "✅ **Semua pemain telah menyelesaikan voting!\nHASIL SEMENTARA**(_Diantara kalian terdapat jack! Vote Pemain mencurigakan!!_)\n"
+
+		for id, player := range models.ActiveGame.Players {
+			if player.Symbol == player.SymbolVoted {
+				message += fmt.Sprintf("- <@%s> 🟢 **Hidup** | **Poin:** %d\n", id, player.Points)
+			} else {
+				message += fmt.Sprintf("- <@%s> ☠️ **Mati**\n", id)
+				delete(models.ActiveGame.Players, id)
+			}
+		}
+
+		// Cek apakah masih ada cukup pemain untuk lanjut
+		if len(models.ActiveGame.Players) <= 1 {
+			s.ChannelMessageSend(channelID, "🎭 **Game telah berakhir!** 🎭")
+			break
+		}
+
+		s.ChannelMessageSend(channelID, message)
+
+		// Tunggu beberapa detik sebelum memulai ulang ronde
+		time.Sleep(5 * time.Second)
 	}
-	s.ChannelMessageSend(channelID, "✅ **Semua pemain telah menyelesaikan voting!**")
 }
+
 
 func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	voteLock.Lock()
@@ -106,8 +131,9 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	voterID := i.Member.User.ID
 	userID := models.ActiveGame.NowPlaying
 	players := models.ActiveGame.Players[userID]
-	if showVotingID != "" {
-		err := s.FollowupMessageDelete(i.Interaction, showVotingID)
+	voter := models.ActiveGame.Players[voterID]
+	if voter.VoteID != "" {
+		err := s.FollowupMessageDelete(i.Interaction, voter.VoteID)
 		if err != nil {
 			if strings.Contains(err.Error(), "Unknown Webhook") {
 				fmt.Println("Pesan lama sudah tidak ada, lanjut tanpa menghapus.")
@@ -115,7 +141,7 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 				fmt.Println("Gagal menghapus pesan lama:", err)
 			}
 		}
-		showVotingID = ""
+		voter.VoteID = ""
 		return
 	}
 
@@ -191,9 +217,7 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	if msg != nil {
-		showVotingID = msg.ID
-	}
+	voter.VoteID = msg.ID
 }
 
 func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix string) {
@@ -255,6 +279,16 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 		}
 	} else {
 		voteStatus = false
+		switch voteTarget {
+		case "heart":
+			models.ActiveGame.Players[userID].SymbolVoted = models.Heart
+		case "spade":
+			models.ActiveGame.Players[userID].SymbolVoted = models.Spade
+		case "club":
+			models.ActiveGame.Players[userID].SymbolVoted = models.Club
+		case "diamond":
+			models.ActiveGame.Players[userID].SymbolVoted = models.Diamond
+		}
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{

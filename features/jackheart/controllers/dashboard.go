@@ -32,6 +32,13 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		role = "Pawn ♟️"
 	}
 
+	if player.DashboardID != "" {
+		err := s.FollowupMessageDelete(i.Interaction, player.DashboardID)
+		if err != nil {
+			fmt.Println("Gagal menghapus pesan lama:", err)
+		}
+	}
+
 	content := fmt.Sprintf("⚙️ **Role Kamu : %s** \n 🎖️**Point Kamu : %d** _Point Maksimal : %d_", role, player.Points, models.ActiveGame.MaxPoints)
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -40,14 +47,6 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			Flags: discordgo.MessageFlagsEphemeral, 
 		},
 	})
-	
-
-	if player.DashboardID != "" {
-		err := s.FollowupMessageDelete(i.Interaction, player.DashboardID)
-		if err != nil {
-			fmt.Println("Gagal menghapus pesan lama:", err)
-		}
-	}
 
 	msg, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 		Content: content,
