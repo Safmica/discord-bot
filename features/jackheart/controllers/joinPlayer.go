@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 
-	models "github.com/Safmica/discord-bot/features/undercover/models"
+	models "github.com/Safmica/discord-bot/features/jackheart/models"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -12,7 +12,7 @@ func updateGameMessage(s *discordgo.Session, channelID, messageID string) {
 		return
 	}
 
-	playerList := fmt.Sprintf("🎮 **Pemain yang sudah bergabung:**.\n _Jumlah Undercover = %d_ (not realtime)\n _Showroles = %t_ (not realtime)\n", models.ActiveGame.Undercover, models.ActiveGame.ShowRoles)
+	playerList :=  "🎮 **Pemain yang sudah bergabung:**"
 	for _, player := range models.ActiveGame.Players {
 		playerList += fmt.Sprintf("🔹 <@%s>\n", player.ID)
 	}

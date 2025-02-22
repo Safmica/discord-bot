@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	models "github.com/Safmica/discord-bot/features/undercover/models"
+	models "github.com/Safmica/discord-bot/features/jackheart/models"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -20,5 +20,5 @@ func Playagain(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		Started: false,
 	}
 
-	sendMessageWithButtons(models.ActiveGame, s, nil, i, "🎮 Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung.")
+	sendMessageWithButtons(models.ActiveGame, s, nil, i, "🎮 Game Jackheart telah dimulai! Klik tombol di bawah untuk bergabung.")
 }

@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/Safmica/discord-bot/config"
-	"github.com/Safmica/discord-bot/features/undercover/controllers"
+	undercoverControllers "github.com/Safmica/discord-bot/features/undercover/controllers"
+	jackheartControllers "github.com/Safmica/discord-bot/features/jackheart/controllers"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -30,7 +31,8 @@ func Start() error{
 	BotId = u.ID
 
 	goBot.AddHandler(messageHandler)
-	goBot.AddHandler(controllers.UndercoverHandler)
+	goBot.AddHandler(undercoverControllers.UndercoverHandler)
+	goBot.AddHandler(jackheartControllers.JackheartHandler)
 
 
 	err = goBot.Open()
@@ -58,11 +60,13 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	
 	switch {
 	case command == "undercover":
-		controllers.StartGame(s, m, nil)
+		undercoverControllers.StartGame(s, m, nil)
 	case strings.HasPrefix(command, "undercover config"):
 		args := strings.TrimPrefix(command, "undercover config")
-		args = strings.TrimSpace(args) // Hilangkan spasi ekstra sebelum mengirim ke controller
-		controllers.ConfigUndercover(s, m ,args)
+		args = strings.TrimSpace(args) 
+		undercoverControllers.ConfigUndercover(s, m ,args)
+	case command == "jackheart":
+		jackheartControllers.StartGame(s, m, nil)
 	}
 	
 

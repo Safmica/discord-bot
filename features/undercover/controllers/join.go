@@ -3,7 +3,7 @@ package controllers
 import (
 	"fmt"
 
-	models "github.com/Safmica/discord-bot/features/undercover"
+	models "github.com/Safmica/discord-bot/features/undercover/models"
 	"github.com/bwmarrin/discordgo"
 )
 

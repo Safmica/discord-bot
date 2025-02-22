@@ -3,7 +3,7 @@ package controllers
 import (
 	"math/rand"
 
-	models "github.com/Safmica/discord-bot/features/undercover"
+	models "github.com/Safmica/discord-bot/features/undercover/models"
 )
 
 func AssignRandomWords() bool {
@@ -19,7 +19,6 @@ func AssignRandomWords() bool {
 	}
 
 	randomIndex := unusedIndexes[rand.Intn(len(unusedIndexes))]
-
 
 	words := models.ActiveGame.Words[randomIndex].Word
 	models.ActiveGame.Words[randomIndex].Used = true
