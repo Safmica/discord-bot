@@ -103,6 +103,9 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	voteLock.Lock()
 	defer voteLock.Unlock()
 
+	voterID := i.Member.User.ID
+	userID := models.ActiveGame.NowPlaying
+	players := models.ActiveGame.Players[userID]
 	if showVotingID != "" {
 		err := s.FollowupMessageDelete(i.Interaction, showVotingID)
 		if err != nil {
@@ -116,10 +119,29 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	voterID := i.Member.User.ID
+	if _, exists := models.ActiveGame.Players[voterID]; !exists {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ Kamu sudah dieliminasi dan tidak bisa vote.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
+	if _, voted := playerVotes[voterID]; voted {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: "❌ Kamu sudah memilih! Tidak bisa memilih lagi.",
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+		return
+	}
+
 	models.ActiveGame.Players[voterID].Points--
-	userID := models.ActiveGame.NowPlaying
-	players := models.ActiveGame.Players[userID]
 
 	symbol := ""
 	switch players.Symbol {
