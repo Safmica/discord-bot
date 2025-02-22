@@ -25,7 +25,6 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 	
 		content := fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu 30 detik**\n _Selain <@%s>, voting bersifat opsional_", player.ID, player.ID)
 	
-		// Kirim pesan pertama kali
 		if voteMessageID == "" {
 			msg, err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
 				Content: content,
@@ -46,9 +45,9 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			models.ActiveGame.VotingID = msg.ID
 			voteMessageID = models.ActiveGame.VotingID
 		}
-		// Countdown voting 30 detik atau sampai player memilih
+
 		for i := 29; i >= 0; i-- {
-			if !voteStatus { // Jika pemain sudah vote, hentikan sesi lebih cepat
+			if !voteStatus {
 				break
 			}
 	
@@ -58,8 +57,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			for player, symbol := range playerVotes {
 				voteResults += fmt.Sprintf("- <@%s> memilih **%s**\n", player, symbol)
 			}
-	
-		// Gabungkan dengan pesan utama
+
 			content = fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu %d detik**\n _Selain <@%s>, voting bersifat opsional_\n\n%s", 
 			player.ID,i, player.ID, voteResults)
 	
@@ -117,7 +115,6 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	players := models.ActiveGame.Players[userID]
 	symbol := ""
 	content := ""
-	fmt.Println(players.Symbol)
 	switch players.Symbol {
 	case models.Heart:
 		symbol = "**Heart ❤️**\n"

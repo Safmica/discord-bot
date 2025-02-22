@@ -122,10 +122,12 @@ func JackheartHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
         if data.CustomID == "jackheart_view_vote_symbol" {
             ShowVote(s, i)
+            Dashboard(s,i)
         }
 
         if strings.HasPrefix(data.CustomID, "jackheart_vote_") {
             HandleVote(s, i, data.CustomID)
+            Dashboard(s,i)
         }
 
         if data.CustomID == "quit_jackheart" {
