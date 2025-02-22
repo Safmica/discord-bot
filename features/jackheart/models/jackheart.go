@@ -26,6 +26,8 @@ type Player struct {
 	SymbolVoted Symbol
 	Points      int
 	DashboardID string
+	VoteID      string
+	ActionID    string
 }
 
 type GameSession struct {
@@ -34,6 +36,7 @@ type GameSession struct {
 	Started       bool
 	HostID        string
 	GameMessageID string
+	VotingID      string
 	MaxPoints     int
 	Mutex         sync.Mutex
 	NowPlaying    string

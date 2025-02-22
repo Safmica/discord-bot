@@ -14,7 +14,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	playerCount := len(models.ActiveGame.Players)
-	if playerCount < 4 {
+	if playerCount < 0 {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -48,14 +48,14 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "🎮 **Game Dimulai!** Tekan tombol di bawah untuk membuka dashboardmu!",
+			Content: "🎮 **Game Dimulai!** Tekan Ready di bawah untuk membuka dashboardmu!",
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{
 					Components: []discordgo.MessageComponent{
 						discordgo.Button{
-							Label:    "Dashboard",
+							Label:    "Ready",
 							Style:    discordgo.PrimaryButton,
-							CustomID: "dashboard",
+							CustomID: "jackheart_dashboard",
 						},
 					},
 				},

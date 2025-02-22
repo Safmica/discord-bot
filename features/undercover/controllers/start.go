@@ -66,17 +66,17 @@ func sendMessageWithButtons(game *models.GameSession, s *discordgo.Session, m *d
 					discordgo.Button{
 						Label:    "Join Game",
 						Style:    discordgo.PrimaryButton,
-						CustomID: "join_game",
+						CustomID: "join_undercover",
 					},
 					discordgo.Button{
 						Label:    "Start Game",
 						Style:    discordgo.SuccessButton,
-						CustomID: "start_game",
+						CustomID: "start_undercover",
 					},
 					discordgo.Button{
 						Label:    "Quit Game",
 						Style:    discordgo.DangerButton,
-						CustomID: "quit_game",
+						CustomID: "quit_undercover",
 					},
 				},
 			},
@@ -101,11 +101,11 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.Type {
 	case discordgo.InteractionMessageComponent:
 		data := i.MessageComponentData()
-		if data.CustomID == "join_game" {
+		if data.CustomID == "join_undercover" {
 			JoinGame(s, i)
 		}
 
-		if data.CustomID == "start_game" {
+		if data.CustomID == "start_undercover" {
 			if models.ActiveGame == nil || models.ActiveGame.HostID != i.Member.User.ID {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 					Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -119,15 +119,15 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			StartGameSession(s, i)
 		}
 
-		if strings.HasPrefix(data.CustomID, "vote_") {
+		if strings.HasPrefix(data.CustomID, "undercover_vote_") {
 			HandleVote(s, i, data.CustomID)
 		}
 
-		if data.CustomID == "quit_game" {
+		if data.CustomID == "quit_undercover" {
 			QuitGame(s, i)
 		}
 
-		if data.CustomID == "play_again" {
+		if data.CustomID == "play_again_undercover" {
 			Playagain(s, i)
 		}
 

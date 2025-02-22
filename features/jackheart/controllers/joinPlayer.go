@@ -12,7 +12,7 @@ func updateGameMessage(s *discordgo.Session, channelID, messageID string) {
 		return
 	}
 
-	playerList :=  "🎮 **Pemain yang sudah bergabung:**"
+	playerList :=  "🎮 **Pemain yang sudah bergabung:\n**"
 	for _, player := range models.ActiveGame.Players {
 		playerList += fmt.Sprintf("🔹 <@%s>\n", player.ID)
 	}

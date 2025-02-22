@@ -7,7 +7,7 @@ import (
 	models "github.com/Safmica/discord-bot/features/jackheart/models"
 	"github.com/bwmarrin/discordgo"
 )
-var dashboardID string
+var playerReady = 0
 func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	userID := i.Member.User.ID
 	player, exists := models.ActiveGame.Players[userID]
@@ -32,6 +32,14 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		role = "Pawn ♟️"
 	}
 
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Flags: discordgo.MessageFlagsEphemeral, 
+		},
+	})
+	
+
 	msg, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 		Content: fmt.Sprintf("⚙️ **Role Kamu : %s** \n 🎖️**Point Kamu : %d** _Point Maksimal : %d_", role, player.Points, models.ActiveGame.MaxPoints),
 		Flags:   discordgo.MessageFlagsEphemeral,
@@ -42,5 +50,11 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 	
 	player.DashboardID = msg.ID
+	playerReady++
+
+	if playerReady == len(models.ActiveGame.Players) {
+        startTurnBasedVoting(s, i.ChannelID)
+    }
 	
 }
+
