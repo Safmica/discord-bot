@@ -22,8 +22,10 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
-	rand.Shuffle(len(models.Symbols), func(i, j int) { models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i] })
-	player.Symbol = models.Symbols[0]
+	if player.Symbol == ""{
+		rand.Shuffle(len(models.Symbols), func(i, j int) { models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i] })
+		player.Symbol = models.Symbols[0]
+	}
 
 	var role string
 	if player.Role == "jackheart" {
@@ -61,6 +63,7 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	playerReady++
 	
 	if playerReady == len(models.ActiveGame.Players) && Phase == "finish"{
+		fmt.Println(player.Symbol)
 		playerReady = 0
 		startTurnBasedVoting(s, i.ChannelID)
 	}

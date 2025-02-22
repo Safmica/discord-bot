@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +13,6 @@ import (
 var playerVotes = make(map[string]string)
 var voteStatus bool
 var voteLock sync.Mutex
-var showVotingID = ""
 var Phase = "finish"
 var voteMessageID = ""
 var gameStatus = true
@@ -90,15 +88,6 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 
 		Phase = "finish"
 
-		// Reset simbol pemain setelah fase selesai
-		for id, player := range models.ActiveGame.Players {
-			rand.Shuffle(len(models.Symbols), func(i, j int) {
-				models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i]
-			})
-			player.Symbol = models.Symbols[0]
-			models.ActiveGame.Players[id] = player
-		}
-
 		message := "✅ **Semua pemain telah menyelesaikan voting!\nHASIL SEMENTARA**(_Diantara kalian terdapat jack! Vote Pemain mencurigakan!!_)\n"
 
 		for id, player := range models.ActiveGame.Players {
@@ -110,15 +99,12 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			}
 		}
 
-		// Cek apakah masih ada cukup pemain untuk lanjut
 		if len(models.ActiveGame.Players) <= 1 {
 			s.ChannelMessageSend(channelID, "🎭 **Game telah berakhir!** 🎭")
 			break
 		}
 
 		s.ChannelMessageSend(channelID, message)
-
-		// Tunggu beberapa detik sebelum memulai ulang ronde
 		time.Sleep(5 * time.Second)
 	}
 }
