@@ -9,6 +9,14 @@ The **Discord Bot** is designed to provide an interactive gaming experience on D
 - **Ephemeral Messages**: Ensure private messages are only visible to the intended recipient.
 - **Role Assignment**: Randomly distribute roles between Civilians and Undercover players.
 - **Secure Interaction Handling**: Prevent unauthorized users from manipulating the game state.
+### Jackheart Game
+- **Game Management**: Create, start, and manage game sessions efficiently.
+- **Hidden Symbol System**: Players must spend points to reveal others' symbols.
+- **Strategic Lying Mechanic**: Players earn points for providing false information.
+- **Point System**: Players start with a calculated point pool, with elimination at zero points and victory upon reaching the maximum threshold.
+- **Voting System**: After each round, players vote, and the most voted player loses points.
+- **Multiple Win Conditions**: Jack Heart wins by surviving or reaching max points, while Pions win by eliminating Jack or reaching max points.
+- **Secure Interaction Handling**: Ensures game integrity by preventing unauthorized actions.
 
 ## Tech Stack
 - ![VSCode](https://img.shields.io/badge/VSCode-0078D4?style=for-the-badge&logo=visual%20studio%20code&logoColor=white) **Visual Studio Code** - Used as the primary IDE for developing the bot.
@@ -31,7 +39,7 @@ export BOT_PREFIX=<your_bot_prefix>
 export UNDERCOVER_WORDS=<your_path_to_word_json>
 ```
 
-### JSON File Structure
+### JSON File Structure Undercover
 Ensure your JSON file follows this structure before running the bot:
 ```json
 {
@@ -65,10 +73,13 @@ go run main.go
 4. Invite the bot to your Discord server and start playing!
 
 ## List of Commands
+### Global
+- `{prefix}help` - Display a list of available commands.
 ### Undercover Game
 - `{prefix}undercover` - Open the playing room session.
 - `{prefix}undercover config {config} {options}` - Configure the game settings.
-- `{prefix}undercover help` - Display a list of available commands.
+### Jackheart Game
+- `{prefix}jackheart` - Open the playing room session.
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
