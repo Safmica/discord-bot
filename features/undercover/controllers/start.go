@@ -101,6 +101,10 @@ func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	switch i.Type {
 	case discordgo.InteractionMessageComponent:
 		data := i.MessageComponentData()
+		if data.CustomID == "undercover_help" {
+			Help(s, i)
+		}
+
 		if data.CustomID == "join_undercover" {
 			JoinGame(s, i)
 		}

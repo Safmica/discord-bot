@@ -17,7 +17,7 @@ var Phase = "finish"
 var voteMessageID = ""
 var gameStatus = true
 var skipTimer = make(chan struct{})
-var phaseNumver = 1
+var phaseNumber = 1
 var roles = "jackheart"
 
 func startTurnBasedVoting(s *discordgo.Session, channelID string) {
@@ -25,8 +25,8 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 	players := activeGame.Players
 
 	for gameStatus {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**",phaseNumver))
-		phaseNumver++
+		s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**",phaseNumber))
+		phaseNumber++
 		for _, player := range players {
 			Phase = "ongoing"
 			models.ActiveGame.NowPlaying = player.ID
@@ -96,7 +96,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 		message := "✅ **Semua pemain telah menyelesaikan voting!\nHASIL SEMENTARA**(_Diantara kalian terdapat jack! Vote Pemain mencurigakan!!_)\n"
 
 		for id, player := range models.ActiveGame.Players {
-			if player.Symbol == player.SymbolVoted {
+			if player.Symbol == player.SymbolVoted && player.Points >= 0{
 				message += fmt.Sprintf("- <@%s> 🟢 **Hidup** | **Poin:** %d\n", id, player.Points)
 			} else {
 				message += fmt.Sprintf("- <@%s> ☠️ **Mati**\n", id)
@@ -175,6 +175,18 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 
 			StartVotingCountdown(s)
 			time.Sleep(1 * time.Second)
+			if votedPlayer != ""{
+				if models.ActiveGame.Players[votedPlayer].Points < 0 {
+					if votedPlayer == models.ActiveGame.Jackheart {
+						gameStatus = false
+						roles = "pawn"
+					}
+					message = fmt.Sprintf("- <@%s> ☠️ **Mati**\n", votedPlayer)
+					delete(models.ActiveGame.Players, votedPlayer)
+					votedPlayer = ""
+					s.ChannelMessageSend(channelID, message)
+				}
+			}
 		}
 
 		EndGame:
@@ -200,7 +212,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 				},
 			}
 			models.ActiveGame = nil
-			phaseNumver = 1
+			phaseNumber = 1
 			Phase = "finish"
 			voteMessageID = ""
 			gameStatus = false
@@ -396,7 +408,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 }
 
 func StartVotingCountdown(s *discordgo.Session) {
-    timer := time.NewTimer(70 * time.Second)
+    timer := time.NewTimer(300 * time.Second)
 
     select {
     case <-timer.C:

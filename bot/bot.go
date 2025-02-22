@@ -59,6 +59,8 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command = strings.TrimSpace(command)
 	
 	switch {
+	case command == "help":
+		Help(s, m, nil)
 	case command == "undercover":
 		undercoverControllers.StartGame(s, m, nil)
 	case strings.HasPrefix(command, "undercover config"):

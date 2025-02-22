@@ -12,6 +12,7 @@ var jackVotes = make(map[string]string)
 var voteCount = make(map[string]int)
 var voteJackMessageID = ""
 var playersVotes = 0
+var votedPlayer = ""
 
 func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix string) {
 	voteStatus = true
@@ -82,12 +83,9 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 		if len(voteLeaders) == 1 {
 			eliminatedPlayerID = voteLeaders[0]
 			if eliminatedPlayerID != "skip" {
-				if eliminatedPlayerID == models.ActiveGame.Jackheart{
-					gameStatus = false
-					roles = "pawn"
-				}
-				delete(models.ActiveGame.Players, eliminatedPlayerID)
-				eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
+				votedPlayer = eliminatedPlayerID
+				models.ActiveGame.Players[votedPlayer].Points-=3
+				eliminationMessage = fmt.Sprintf("💣 <@%s> telah dikurangi 3 poin!", eliminatedPlayerID)
 			} else {
 				eliminationMessage = "🤷‍♂️ Pemain memilih skip! Tidak ada yang dieliminasi."
 			}

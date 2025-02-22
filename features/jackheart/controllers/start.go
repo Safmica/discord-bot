@@ -100,6 +100,10 @@ func JackheartHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
     switch i.Type {
     case discordgo.InteractionMessageComponent:
         data := i.MessageComponentData()
+        if data.CustomID == "jackheart_help" {
+            Help(s, i)
+        }
+
         if data.CustomID == "join_jackheart" {
             JoinGame(s, i)
         }
