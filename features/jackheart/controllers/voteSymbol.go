@@ -99,13 +99,60 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			}
 		}
 
-		if len(models.ActiveGame.Players) <= 1 {
-			s.ChannelMessageSend(channelID, "🎭 **Game telah berakhir!** 🎭")
-			break
+		for _, player := range models.ActiveGame.Players {
+			player.Symbol = ""
+			player.SymbolVoted = ""
 		}
 
-		s.ChannelMessageSend(channelID, message)
-		time.Sleep(5 * time.Second)
+		var components []discordgo.MessageComponent
+		var buttons []discordgo.MessageComponent
+
+		for _, p := range players {
+	
+			buttons = append(buttons, discordgo.Button{
+				Label:    p.Username,
+				Style:    discordgo.PrimaryButton,
+				CustomID: "jack_vote_" + p.ID,
+			})
+	
+			if len(buttons) == 5 {
+				components = append(components, discordgo.ActionsRow{Components: buttons})
+				buttons = []discordgo.MessageComponent{}
+			}
+		}
+	
+		if len(buttons) > 0 {
+			components = append(components, discordgo.ActionsRow{Components: buttons})
+			buttons = []discordgo.MessageComponent{}
+		}
+	
+		buttons = append(buttons, discordgo.Button{
+			Label:    "Skip",
+			Style:    discordgo.SecondaryButton,
+			CustomID: "jack_vote_skip",
+		})
+	
+		if len(buttons) == 5 {
+			components = append(components, discordgo.ActionsRow{Components: buttons})
+			buttons = []discordgo.MessageComponent{}
+		}
+	
+		if len(buttons) > 0 {
+			components = append(components, discordgo.ActionsRow{Components: buttons})
+		}
+	
+		msg, err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
+			Content:    message,
+			Components: components,
+		})
+	
+		if err != nil {
+			fmt.Println("Gagal mengirim pesan:", err)
+		}
+	
+		lastVoteMessageID = msg.ID
+
+		time.Sleep(60 * time.Second)
 	}
 }
 
@@ -207,7 +254,6 @@ func ShowVote(s *discordgo.Session, i *discordgo.InteractionCreate) {
 }
 
 func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix string) {
-	fmt.Println(models.ActiveGame.Players)
 	if models.ActiveGame == nil || !models.ActiveGame.Started {
 		return
 	}

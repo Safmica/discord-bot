@@ -131,6 +131,11 @@ func JackheartHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
             Dashboard(s,i)
         }
 
+        if strings.HasPrefix(data.CustomID, "jack_vote_") {
+            JackVote(s, i, data.CustomID)
+        }
+
+
         if data.CustomID == "quit_jackheart" {
             QuitGame(s, i)
         }
