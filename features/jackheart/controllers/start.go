@@ -24,8 +24,12 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
 
     gameStatus = true
 
-    content :=  "🎮 **Game Jackheart telah dimulai! Klik tombol di bawah untuk bergabung**"
-
+    content := `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎭 **JACKHEART GAMES** 🎭
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎮 **Game Jackheart telah dimulai! Klik tombol di bawah untuk bergabung**"
+`
     sendMessageWithButtons(models.ActiveGame, s, m, i, content)
 }
 

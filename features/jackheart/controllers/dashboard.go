@@ -14,7 +14,7 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			fmt.Println("🚨 Recovered from panic:", r)
 		}
 	}()
-	
+
 	if models.ActiveGame == nil || !gameStatus {
 		return
 	}
@@ -55,7 +55,14 @@ func Dashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}
 
-	content := fmt.Sprintf("⚙️ **Role Kamu : %s** \n 🎖️**Point Kamu : %d** _Point Maksimal : %d_", role, player.Points, models.ActiveGame.MaxPoints)
+	content := fmt.Sprintf(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎭 **JACK HEART DASHBOARD** 🎭
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 **Role Kamu :**  **%s**
+🔸 **Point Kamu:** **%d / _%d (Max Point)_**🏆
+_$help (jika anda binggung)_
+		`, role, player.Points, models.ActiveGame.MaxPoints)
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
