@@ -16,12 +16,16 @@ var voteLock sync.Mutex
 var Phase = "finish"
 var voteMessageID = ""
 var gameStatus = true
+var skipTimer = make(chan struct{})
+var phaseNumver = 1
+
 
 func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 	activeGame := models.ActiveGame
 	players := activeGame.Players
 
 	for gameStatus {
+		phaseNumver++
 		for _, player := range players {
 			Phase = "ongoing"
 			models.ActiveGame.NowPlaying = player.ID
@@ -152,7 +156,9 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 	
 		lastVoteMessageID = msg.ID
 
-		time.Sleep(60 * time.Second)
+		StartVotingCountdown(s)
+		s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**",phaseNumver))
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -329,4 +335,23 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			},
 		})
 	}
+}
+
+func StartVotingCountdown(s *discordgo.Session) {
+    timer := time.NewTimer(70 * time.Second)
+
+    select {
+    case <-timer.C:
+        fmt.Println("Waktu habis, lanjut ke tahap berikutnya!")
+    case <-skipTimer:
+        fmt.Println("Timer di-skip, lanjut ke tahap berikutnya lebih cepat!")
+        timer.Stop()
+    }
+}
+
+func SkipVotingCountdown() {
+    select {
+    case skipTimer <- struct{}{}:
+    default:
+    }
 }

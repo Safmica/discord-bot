@@ -94,7 +94,9 @@ func JackVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix strin
 		jackVotes = make(map[string]string)
 		voteCount = make(map[string]int)
 		voteJackMessageID = ""
+		playersVotes = 0
 		s.ChannelMessageSend(i.Interaction.ChannelID, eliminationMessage)
+		SkipVotingCountdown()
 	} else {
 		var voteResults string
 		voteResults = "📊 **Hasil Voting Sementara:**\n"
