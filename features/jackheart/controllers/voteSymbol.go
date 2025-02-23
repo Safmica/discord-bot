@@ -63,7 +63,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			models.ActiveGame.NowPlaying = player.ID
 			voteStatus = true
 
-			content = fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu 300 detik**\n _Selain <@%s>, voting bersifat opsional_", player.ID, player.ID)
+			content = fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu 100 detik**\n _Selain <@%s>, voting bersifat opsional_\n\n📜 **Saran dari player lain:** (_hati hati mereka mungkin berbohong_)\n", player.ID, player.ID)
 
 			msg, err := s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 				Content: content,
@@ -83,7 +83,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			models.ActiveGame.VotingID = msg.ID
 			voteMessageID = models.ActiveGame.VotingID
 
-			for i := 299; i >= 0; i-- {
+			for i := 99; i >= 0; i-- {
 				voteLock.Lock()
 				if !voteStatus {
 					voteLock.Unlock()

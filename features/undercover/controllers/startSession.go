@@ -30,6 +30,16 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		return
 	}
 
+	if models.ActiveGame.GameMessageID != "" {
+		content := "🎠 **Game Telah dimulai!**"
+		s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+			ID:         models.ActiveGame.GameMessageID,
+			Channel:    models.ActiveGame.ID,
+			Content:    &content,
+			Components: &[]discordgo.MessageComponent{},
+		})
+	}
+
 	models.ActiveGame.Started = true
 
 	players := make([]*models.Player, 0, playerCount)
