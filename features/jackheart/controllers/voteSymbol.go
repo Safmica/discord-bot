@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -63,9 +64,27 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 
 				time.Sleep(1 * time.Second)
 
-				voteResults := "📜 **Hasil Voting Sementara:**\n"
-				for player, symbol := range playerVotes {
-					voteResults += fmt.Sprintf("- <@%s> memilih **%s**\n", player, symbol)
+				players := make([]string, 0, len(playerVotes))
+				for player := range playerVotes {
+					players = append(players, player)
+				}
+
+				sort.Strings(players)
+
+				voteResults := "📜 **Saran dari player lain:** (_hati hati mereka mungkin berbohong_)\n"
+				for _, player := range players {
+					symbol := ""
+					switch playerVotes[player] {
+					case "heart":
+						symbol = "**Heart ❤️**"
+					case "diamond":
+						symbol = "**Diamond ♦️**"
+					case "club":
+						symbol = "**Club ♣️**"
+					case "spade":
+						symbol = "**Spade ♠️**"
+					}
+					voteResults += fmt.Sprintf("- Simbolmu adalah **%s** kata <@%s>\n", symbol, player)
 				}
 
 				content = fmt.Sprintf("📜 **Silahkan voting simbol <@%s> Dalam waktu %d detik**\n _Selain <@%s>, voting bersifat opsional_\n\n%s",
