@@ -28,7 +28,7 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎭 **UNDERCOVER GAMES** 🎭
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎮 **Game Underecover telah dimulai! Klik tombol di bawah untuk bergabung**"
+🎮 **Game Undercover telah dimulai! Klik tombol di bawah untuk bergabung**"
 `
 	sendMessageWithButtons(models.ActiveGame, s, m, i, content)
 }
