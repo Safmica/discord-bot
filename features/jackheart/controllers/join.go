@@ -23,7 +23,7 @@ func JoinGame(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	defer models.ActiveGame.Mutex.Unlock()
 
 	userID := i.Interaction.Member.User.ID
-	username := i.Interaction.Member.User.Username
+	username := i.Interaction.Member.User.GlobalName
 
 	if _, exists := models.ActiveGame.Players[userID]; exists {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

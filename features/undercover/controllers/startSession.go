@@ -98,7 +98,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		buttons = append(buttons, discordgo.Button{
 			Label:    p.Username,
 			Style:    discordgo.PrimaryButton,
-			CustomID: "vote_" + p.ID,
+			CustomID: "undercover_vote_" + p.ID,
 		})
 
 		if len(buttons) == 5 {
@@ -115,7 +115,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	buttons = append(buttons, discordgo.Button{
 		Label:    "Skip",
 		Style:    discordgo.SecondaryButton,
-		CustomID: "vote_skip",
+		CustomID: "undercover_vote_skip",
 	})
 
 	if len(buttons) == 5 {
@@ -126,7 +126,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	buttons = append(buttons, discordgo.Button{
 		Label:    "Close Vote",
 		Style:    discordgo.DangerButton,
-		CustomID: "vote_close",
+		CustomID: "undercover_vote_close",
 	})
 
 	if len(buttons) > 0 {
@@ -157,7 +157,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 	defer voteLock.Unlock()
 
 	userID := i.Member.User.ID
-	voteTarget := strings.TrimPrefix(prefix, "vote_")
+	voteTarget := strings.TrimPrefix(prefix, "undercover_vote_")
 
 	if voteTarget == "close" && userID != models.ActiveGame.HostID {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -211,6 +211,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
+
 
 	gameEnded := false
 	if len(playerVotes) == len(models.ActiveGame.Players) {
@@ -288,6 +289,20 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			}
 		}
 
+		
+		unvotedPlayers := []string{}
+		for playerID := range models.ActiveGame.Players {
+			if _, voted := playerVotes[playerID]; !voted {
+				unvotedPlayers = append(unvotedPlayers, fmt.Sprintf("<@%s>", playerID))
+			}
+		}
+
+		if len(unvotedPlayers) > 0 {
+			voteResults += "\n⏳ **Pemain yang belum vote:** " + strings.Join(unvotedPlayers, ", ")
+		} else {
+			voteResults += "\n✅ Semua pemain sudah vote!"
+		}
+
 		if voteMessageID != "" && voteStatus {
 			_, err := s.ChannelMessageEdit(i.Interaction.ChannelID, voteMessageID, voteResults)
 			if err != nil {
@@ -329,7 +344,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 						discordgo.Button{
 							Label:    "Play Again",
 							Style:    discordgo.PrimaryButton,
-							CustomID: "play_again",
+							CustomID: "play_again_undercover",
 						},
 					},
 				},
@@ -365,7 +380,7 @@ func SendVotingMessage(s *discordgo.Session, i *discordgo.InteractionCreate, cha
 		buttons = append(buttons, discordgo.Button{
 			Label:    p.Username,
 			Style:    discordgo.PrimaryButton,
-			CustomID: "vote_" + p.ID,
+			CustomID: "undercover_vote_" + p.ID,
 		})
 
 		if len(buttons) == 5 {
@@ -382,7 +397,7 @@ func SendVotingMessage(s *discordgo.Session, i *discordgo.InteractionCreate, cha
 	buttons = append(buttons, discordgo.Button{
 		Label:    "Skip",
 		Style:    discordgo.SecondaryButton,
-		CustomID: "vote_skip",
+		CustomID: "undercover_vote_skip",
 	})
 
 	if len(buttons) == 5 {
@@ -393,7 +408,7 @@ func SendVotingMessage(s *discordgo.Session, i *discordgo.InteractionCreate, cha
 	buttons = append(buttons, discordgo.Button{
 		Label:    "Close Vote",
 		Style:    discordgo.DangerButton,
-		CustomID: "vote_close",
+		CustomID: "undercover_vote_close",
 	})
 
 	if len(buttons) > 0 {

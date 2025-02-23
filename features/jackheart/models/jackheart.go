@@ -19,28 +19,31 @@ const (
 var Symbols = []Symbol{Heart, Spade, Diamond, Club}
 
 type Player struct {
-	ID          string
-	Username    string
-	Role        Role
-	Symbol      Symbol
-	SymbolVoted Symbol
-	Points      int
-	DashboardID string
-	VoteID      string
-	ActionID    string
+	ID           string
+	Username     string
+	Role         Role
+	Symbol       Symbol
+	SymbolVoted  Symbol
+	Points       int
+	VotingPlayer string
+	DashboardID  string
+	VoteID       string
+	ActionID     string
 }
 
 type GameSession struct {
-	ID            string
-	Players       map[string]*Player
-	Started       bool
-	HostID        string
-	GameMessageID string
-	Jackheart     string
-	VotingID      string
-	MaxPoints     int
-	Mutex         sync.Mutex
-	NowPlaying    string
+	ID               string
+	Players          map[string]*Player
+	Started          bool
+	HostID           string
+	GameMessageID    string
+	Jackheart        string
+	VotingNow        string
+	VotingID         string
+	TempVoteVotingID string
+	MaxPoints        int
+	Mutex            sync.Mutex
+	NowPlaying       string
 }
 
 var ActiveGame *GameSession

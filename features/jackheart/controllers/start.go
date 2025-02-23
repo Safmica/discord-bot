@@ -126,20 +126,22 @@ func JackheartHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			StartGameSession(s, i)
 		}
 
+        if data.CustomID == "view_dashboard_jackheart" {
+            ViewDashboard(s, i)
+        }
+
         if data.CustomID == "jackheart_dashboard" {
             Dashboard(s, i)
         }
 
         if data.CustomID == "jackheart_view_vote_symbol" {
             ShowVote(s, i)
-            Dashboard(s,i)
         }
 
         if strings.HasPrefix(data.CustomID, "jackheart_vote_") {
             HandleVote(s, i, data.CustomID)
             if models.ActiveGame != nil {
                 ShowVote(s,i)
-                Dashboard(s,i)
             }
         }
 

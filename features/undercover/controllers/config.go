@@ -47,7 +47,7 @@ func ConfigUndercover(s *discordgo.Session, m *discordgo.MessageCreate, args str
 			return
 		}
 	
-		maxUndercover := totalPlayers / 4 
+		maxUndercover := totalPlayers / 2
 	
 		if undercover > maxUndercover {
 			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("⛔ Jumlah Undercover terlalu banyak! Maksimal %d dari %d pemain.", maxUndercover, totalPlayers))

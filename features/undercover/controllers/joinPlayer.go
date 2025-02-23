@@ -13,13 +13,13 @@ func updateGameMessage(s *discordgo.Session, channelID, messageID string) {
 	}
 
 	playerList :=  fmt.Sprintf(`
-	━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	🎭 **UNDERCOVER DASHBOARD** 🎭
-	━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-	_Jumlah Undercover = %d_ (not realtime)
-	_Showroles = %t_ (not realtime)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎭 **UNDERCOVER DASHBOARD** 🎭
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+_Jumlah Undercover = %d_ (not realtime)
+_Showroles = %t_ (not realtime)
 
-	🎮 **List Pemain**"
+🎮 **List Pemain**"
 	`, models.ActiveGame.Undercover, models.ActiveGame.ShowRoles)
 	for _, player := range models.ActiveGame.Players {
 		playerList += fmt.Sprintf("🔹 <@%s>\n", player.ID)

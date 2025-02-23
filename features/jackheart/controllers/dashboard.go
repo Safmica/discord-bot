@@ -91,3 +91,45 @@ _$help (jika anda binggung)_
 		startTurnBasedVoting(s, i.ChannelID)
 	}
 }
+
+func ViewDashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("🚨 Recovered from panic:", r)
+		}
+	}()
+
+	fmt.Println("helo")
+
+	if models.ActiveGame == nil || !gameStatus {
+		return
+	}
+
+	userID := i.Member.User.ID
+
+	player := models.ActiveGame.Players[userID]
+
+	var role string
+	if player.Role == "jackheart" {
+		role = "Jackheart 🎭"
+	} else {
+		role = "Pawn ♟️"
+	}
+
+	content := fmt.Sprintf(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎭 **JACK HEART DASHBOARD** 🎭
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔹 **Role Kamu :**  **%s**
+🔸 **Point Kamu:** **%d / _%d (Max Point)_**🏆
+_$help (jika anda binggung)_
+		`, role, player.Points, models.ActiveGame.MaxPoints)
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Content: content,
+			Flags:   discordgo.MessageFlagsEphemeral, 
+		},
+	})
+}
