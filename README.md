@@ -1,6 +1,6 @@
 # Discord Bot
 
-The **Discord Bot** is designed to provide an interactive gaming experience on Discord. Currently, it includes features for playing the Undercover game and handling simple message responses. The bot is built using **Golang** and integrates with the Discord API via `discordgo`.
+The **Discord Bot** is designed to provide an interactive gaming experience on Discord. Currently, it includes features for playing the Undercover, Jackhert game and handling simple message responses. The bot is built using **Golang** and integrates with the Discord API via `discordgo`.
 
 ## Features
 ### Undercover Game
