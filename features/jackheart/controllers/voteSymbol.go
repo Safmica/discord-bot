@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"sync"
@@ -27,7 +28,35 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 
 	content := ""
 	for gameStatus {
-		s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**", phaseNumber))
+		for _, players := range models.ActiveGame.Players {
+			rand.Shuffle(len(models.Symbols), func(i, j int) { models.Symbols[i], models.Symbols[j] = models.Symbols[j], models.Symbols[i] })
+			players.Symbol = models.Symbols[0]
+		}
+
+		if models.ActiveGame.TempVoteVotingID != "" {
+			content = "🛑 **Voting untuk telah berakhir!**"
+			s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+				ID:         models.ActiveGame.JackVoteID,
+				Channel:    channelID,
+				Content:    &content,
+				Components: &[]discordgo.MessageComponent{},
+			})
+		}
+		if phaseNumber > 1 {
+			msg, _ := s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
+				Content: fmt.Sprintf("**MEMASUKI FASE -%d**", phaseNumber),
+				Components: []discordgo.MessageComponent{
+					discordgo.ActionsRow{Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Label:    "View Dashboard",
+							Style:    discordgo.PrimaryButton,
+							CustomID: "view_dashboard_jackheart",
+						},
+					}}}})
+			models.ActiveGame.AnnounceID = msg.ID
+		} else {
+			s.ChannelMessageSend(channelID, fmt.Sprintf("**MEMASUKI FASE -%d**", phaseNumber))
+		}
 		phaseNumber++
 		for _, player := range players {
 			Phase = "ongoing"
@@ -166,11 +195,11 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 				gameStatus = false
 				roles = "jackheart"
 			}
+		}
 
-			if len(models.ActiveGame.Players) <= 0 {
-				gameStatus = false
-				roles = "draw"
-			}
+		if len(models.ActiveGame.Players) <= 0 {
+			gameStatus = false
+			roles = "draw"
 		}
 
 		if gameStatus {
@@ -211,10 +240,12 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 				components = append(components, discordgo.ActionsRow{Components: buttons})
 			}
 
-			_, err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
+			msg , err := s.ChannelMessageSendComplex(models.ActiveGame.ID, &discordgo.MessageSend{
 				Content:    message,
 				Components: components,
 			})
+
+			models.ActiveGame.JackVoteID = msg.ID
 
 			if err != nil {
 				fmt.Println("Gagal mengirim pesan:", err)
@@ -240,7 +271,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			}
 			content := "🛑 **Voting untuk telah berakhir!**"
 			s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-				ID:         voteMessageID,
+				ID:         models.ActiveGame.TempVoteVotingID,
 				Channel:    channelID,
 				Content:    &content,
 				Components: &[]discordgo.MessageComponent{},
@@ -251,7 +282,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 		if !gameStatus {
 			content := "🛑 **Voting untuk telah berakhir!**"
 			s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-				ID:         voteMessageID,
+				ID:         models.ActiveGame.TempVoteVotingID,
 				Channel:    channelID,
 				Content:    &content,
 				Components: &[]discordgo.MessageComponent{},
@@ -262,7 +293,7 @@ func startTurnBasedVoting(s *discordgo.Session, channelID string) {
 			} else if roles == "jackheart" {
 				message = fmt.Sprintf("**🎊Jackheart Menang! Jackheart adalah <@%s>🎉**", models.ActiveGame.Jackheart)
 			} else {
-				message = "**🎊Kalian semuat mati, tidak ada yang menang🎉**"
+				message = "**🤣HAHAHA Kalian semuat mati, tidak ada yang menang🤣**"
 			}
 			msg := &discordgo.MessageSend{
 				Content: message,
@@ -456,7 +487,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf("🎃 <@%s>Kamu jujur, poinmu tetap -1!", voterID),
+					Content: "🎃 Kamu jujur, poinmu tetap -1!",
 					Flags:   discordgo.MessageFlagsEphemeral,
 				},
 			})
@@ -465,7 +496,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprintf("🎭 <@%s>Kamu berbohong, poinmu +2!", voterID),
+					Content: "🎭 Kamu berbohong, poinmu +2!",
 					Flags:   discordgo.MessageFlagsEphemeral,
 				},
 			})
@@ -487,7 +518,7 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: fmt.Sprintf("🎃 **<@%s>Kamu memilih _%s_, Good luck!**", userID, voteTarget),
+				Content: "🎃 **Pilihanmu Berhasil Dicatat!**",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})

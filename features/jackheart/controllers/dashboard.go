@@ -80,13 +80,10 @@ _$help (jika anda binggung)_
 		return
 	}
 
-	// ✅ Simpan ID dashboard baru
 	player.DashboardID = msg.ID
 	playerReady++
 
-	// ✅ Pastikan fase dan jumlah pemain sesuai sebelum lanjut
 	if playerReady == len(models.ActiveGame.Players) && Phase == "finish" {
-		fmt.Println(player.Symbol)
 		playerReady = 0
 		startTurnBasedVoting(s, i.ChannelID)
 	}
@@ -99,7 +96,6 @@ func ViewDashboard(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		}
 	}()
 
-	fmt.Println("helo")
 
 	if models.ActiveGame == nil || !gameStatus {
 		return

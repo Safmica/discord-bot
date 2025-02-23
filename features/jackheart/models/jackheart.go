@@ -40,6 +40,8 @@ type GameSession struct {
 	Jackheart        string
 	VotingNow        string
 	VotingID         string
+	JackVoteID       string
+	AnnounceID       string
 	TempVoteVotingID string
 	MaxPoints        int
 	Mutex            sync.Mutex

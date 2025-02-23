@@ -6,6 +6,9 @@ import (
 )
 
 func Playagain(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	voteLock.Lock()
+	defer voteLock.Unlock()
+	
 	if models.ActiveGame != nil {
 		sendMessage(s, nil, i, "🚀 Game sudah dimulai! Gunakan tombol 'Join Game' untuk bergabung.")
 		return

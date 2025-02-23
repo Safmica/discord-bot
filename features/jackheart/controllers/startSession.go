@@ -26,6 +26,14 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	models.ActiveGame.Started = true
 
+	content := "🎠 **Game Telah dimulai!**"
+	s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		ID:         models.ActiveGame.GameMessageID,
+		Channel:    models.ActiveGame.ID,
+		Content:    &content,
+		Components: &[]discordgo.MessageComponent{},
+	})
+
 	players := make([]*models.Player, 0, playerCount)
 	for _, p := range models.ActiveGame.Players {
 		players = append(players, p)
