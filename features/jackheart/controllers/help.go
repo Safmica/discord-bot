@@ -25,8 +25,6 @@ func Help(s *discordgo.Session, i *discordgo.InteractionCreate) {
 3️⃣ Players reaching 0 points are eliminated.
 4️⃣ Voting occurs at the end of each round. The most voted player loses 3 points.
 
-🔗 Get ready to deceive, deduce, and dominate!
-
 ---
 
 🎭 **Aturan Permainan Jack Heart** 🎭
@@ -49,18 +47,12 @@ func Help(s *discordgo.Session, i *discordgo.InteractionCreate) {
 3️⃣ Pemain yang mencapai 0 poin akan tereliminasi.
 4️⃣ Voting dilakukan di akhir setiap ronde. Pemain dengan suara terbanyak kehilangan 3 poin.
 
-🔗 Bersiaplah untuk menipu, menganalisis, dan mendominasi!
-
-
 📌 **Strategi & Tips:**
 - Jangan terlalu polos dan jujur, bisa saja yang kamu tolong adalah Jackheart🎃
 - View Symbol Akan mengurangi poinmu sebanyak -1, tapi jika kamu menyarankan simbol salah, akan mendapatkan +2! 🔍
 - Jika kamu tidak ingin melakukan voting, tidak usah tekan View Simbol dan Pointmu akan tetap! 🤥
-- Sebagai Poin, cari Jackheart dan voting agar poinnya berkurang atau capai point maksimal! 📉
-- Sebagai Jackheart, manipulasi dan capai point maksimal atau bertahan sampai akhir! 📉
 `
 	
-
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
