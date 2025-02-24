@@ -255,8 +255,8 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			if eliminatedPlayerID != "skip" {
 				if models.ActiveGame.ShowRoles {
 					elimnatedPlayer := models.ActiveGame.Players[eliminatedPlayerID]
-					delete(models.ActiveGame.Players, eliminatedPlayerID)
 					eliminationMessage = fmt.Sprintf("☠️ **<@%s> telah dieliminasi! Dan dia merupakan _%s_**", eliminatedPlayerID, elimnatedPlayer.Role)
+					delete(models.ActiveGame.Players, eliminatedPlayerID)
 				} else {
 					delete(models.ActiveGame.Players, eliminatedPlayerID)
 					eliminationMessage = fmt.Sprintf("☠️ <@%s> telah dieliminasi!", eliminatedPlayerID)
