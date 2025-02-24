@@ -62,11 +62,17 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	models.ActiveGame.Words = wordData.Words
 
+	j := 0
 	for i := 0; i < models.ActiveGame.Undercover; i++ {
 		players[i].Role = models.Undercover
+		j = models.ActiveGame.Undercover
 	}
 
-	for i := models.ActiveGame.Undercover; i < len(players); i++ {
+	for i := j; i < j+models.ActiveGame.MrWhite; i++ {
+		players[i].Role = models.MrWhite
+    }
+
+	for i := j+models.ActiveGame.MrWhite; i < len(players); i++ {
 		players[i].Role = models.Civilian
 	}
 
@@ -224,7 +230,6 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 		},
 	})
 
-
 	gameEnded := false
 	if len(playerVotes) == len(models.ActiveGame.Players) {
 		voteStatus = false
@@ -301,7 +306,6 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 			}
 		}
 
-		
 		unvotedPlayers := []string{}
 		for playerID := range models.ActiveGame.Players {
 			if _, voted := playerVotes[playerID]; !voted {
@@ -427,7 +431,7 @@ func SendVotingMessage(s *discordgo.Session, i *discordgo.InteractionCreate, cha
 		components = append(components, discordgo.ActionsRow{Components: buttons})
 	}
 
-	s.ChannelMessageSendComplex(i.Interaction.ChannelID, &discordgo.MessageSend{
+	s.ChannelMessageSendComplex(channelID, &discordgo.MessageSend{
 		Content:    playerList + "\n🗳 **Silakan pilih aksi berikut!**",
 		Components: components,
 	})
@@ -439,7 +443,7 @@ func CloseVoting(s *discordgo.Session, i *discordgo.InteractionCreate, channelID
 		content := "🗳 **Voting telah selesai!**"
 		_, err := s.ChannelMessageEditComplex(&discordgo.MessageEdit{
 			ID:         lastVoteMessageID,
-			Channel:    i.Interaction.ChannelID,
+			Channel:    channelID,
 			Content:    &content,
 			Components: &[]discordgo.MessageComponent{},
 		})
@@ -470,13 +474,140 @@ func ViewSecretWord(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		word = models.ActiveGame.CivilianWords
 	case models.Undercover:
 		word = models.ActiveGame.UndercoverWords
+	case models.MrWhite:
+		word = "**🕵🏻‍♀️Anda adalah Mr. White**, amati dan tebak kata kata civilain\nKamu hanya punya 1 peluang, jika sudah yakin tulis **$guess_word <kata kata civilian>**"
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("🔐 **Kata Rahasia Kamu:** %s", word),
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
-	})
+	if player.Role == models.MrWhite {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: word,
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+	} else {
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf("🔐 **Kata Rahasia Kamu:** %s", word),
+				Flags:   discordgo.MessageFlagsEphemeral,
+			},
+		})
+	}
+}
+
+func MrWhiteVote(s *discordgo.Session, i *discordgo.InteractionCreate, m *discordgo.MessageCreate, wordGuess string) {
+	voteStatus = true
+	eliminationMessage := ""
+	voteLock.Lock()
+	defer voteLock.Unlock()
+
+	var userID string
+	if m.Member != nil && m.Member.User != nil {
+		userID = m.Member.User.ID
+	} else {
+		userID = m.Author.ID
+	}
+
+	mrWhite := models.ActiveGame.Players[userID]
+	fmt.Print(mrWhite)
+
+	if models.ActiveGame == nil || !models.ActiveGame.Started || mrWhite == nil {
+		return
+	}
+
+	if mrWhite.Role != "mr_white" {
+		delete(models.ActiveGame.Players, userID)
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("❌ <@%s> bukan Mr.White, dia dieliminasi WKWKWK KOCAK.", userID))
+		gameEnded := false
+		civilianCount, undercoverCount := 0, 0
+		for _, player := range models.ActiveGame.Players {
+			if player.Role == models.Civilian {
+				civilianCount++
+			} else if player.Role == models.Undercover {
+				undercoverCount++
+			}
+		}
+
+		if undercoverCount == 0 {
+			eliminationMessage = "🎉 **Civilian menang!** Semua Undercover telah dieliminasi."
+			gameEnded = true
+		} else if undercoverCount >= civilianCount {
+			eliminationMessage = "🤫 **Undercover menang!** Mereka berhasil menguasai permainan."
+			gameEnded = true
+		}
+
+		if gameEnded {
+			models.ActiveGame = nil
+			playerVotes = make(map[string]string)
+			voteCount = make(map[string]int)
+			voteMessageID = ""
+	
+			msg := &discordgo.MessageSend{
+				Content: eliminationMessage,
+				Components: []discordgo.MessageComponent{
+					discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{
+							discordgo.Button{
+								Label:    "Play Again",
+								Style:    discordgo.PrimaryButton,
+								CustomID: "play_again_undercover",
+							},
+						},
+					},
+				},
+			}
+	
+			s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
+				Content:    msg.Content,
+				Components: msg.Components,
+			})
+		}
+		return
+	}
+
+	gameEnded := false
+	if voteStatus {
+		if wordGuess == models.ActiveGame.CivilianWords {
+			gameEnded = true
+		} else {
+			delete(models.ActiveGame.Players, userID)
+			eliminationMessage = fmt.Sprintf("☠️ **<@%s> adalah Mr. White! Dan dia salah menebak**", userID)
+		}
+
+		if gameEnded {
+			models.ActiveGame = nil
+			s.ChannelMessageSend(m.ChannelID, eliminationMessage)
+		} else {
+			s.ChannelMessageSend(m.ChannelID, eliminationMessage)
+		}
+	}
+
+	if gameEnded {
+		voteResults := "Mr. White menang 🕵🏻‍♀️\n📊 **Game Berakhir**\n"
+		playerVotes = make(map[string]string)
+		voteCount = make(map[string]int)
+		voteMessageID = ""
+
+		msg := &discordgo.MessageSend{
+			Content: voteResults,
+			Components: []discordgo.MessageComponent{
+				discordgo.ActionsRow{
+					Components: []discordgo.MessageComponent{
+						discordgo.Button{
+							Label:    "Play Again",
+							Style:    discordgo.PrimaryButton,
+							CustomID: "play_again_undercover",
+						},
+					},
+				},
+			},
+		}
+
+		s.ChannelMessageSendComplex(m.ChannelID, &discordgo.MessageSend{
+			Content:    msg.Content,
+			Components: msg.Components,
+		})
+	}
 }

@@ -37,6 +37,7 @@ type GameSession struct {
 	Words           []WordEntry
 	CivilianWords   string
 	UndercoverWords string
+	MrWhite         int
 }
 
 var ActiveGame *GameSession

@@ -17,10 +17,11 @@ func updateGameMessage(s *discordgo.Session, channelID, messageID string) {
 🎭 **UNDERCOVER DASHBOARD** 🎭
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 _Jumlah Undercover = %d_ (not realtime)
+_Jumlah Mr.White = %d_ (not realtime)
 _Showroles = %t_ (not realtime)
 
 🎮 **List Pemain**"
-`, models.ActiveGame.Undercover, models.ActiveGame.ShowRoles)
+`, models.ActiveGame.Undercover,models.ActiveGame.MrWhite, models.ActiveGame.ShowRoles)
 	for _, player := range models.ActiveGame.Players {
 		playerList += fmt.Sprintf("🔹 <@%s>\n", player.ID)
 	}

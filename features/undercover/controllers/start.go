@@ -22,6 +22,7 @@ func StartGame(s *discordgo.Session, m *discordgo.MessageCreate, i *discordgo.In
 		Started:    false,
 		ShowRoles:  true,
 		Undercover: 1,
+		MrWhite: 0,
 	}
 
     content := `

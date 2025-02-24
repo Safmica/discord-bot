@@ -70,5 +70,24 @@ func ConfigUndercover(s *discordgo.Session, m *discordgo.MessageCreate, args str
 	
 		models.ActiveGame.ShowRoles = showroles
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅ Showroles diatur menjadi %t.", showroles))
+	case "mrwhite" :
+		mrwhite, err := strconv.Atoi(config[1])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, "⛔ Input tidak valid! Harap masukkan angka.")
+			return
+		}
+	
+		if mrwhite < 0 {
+			mrwhite = -mrwhite
+		}
+	
+		totalPlayers := len(models.ActiveGame.Players)
+		if totalPlayers == 0 {
+			s.ChannelMessageSend(m.ChannelID, "⛔ Tidak ada pemain dalam game!")
+			return
+		}
+	
+		models.ActiveGame.MrWhite = mrwhite
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("✅ Jumlah Mr.White diatur menjadi %d.", mrwhite))
 	}
 }

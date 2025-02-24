@@ -69,6 +69,10 @@ func messageHandler(s *discordgo.Session, m *discordgo.MessageCreate) {
 		undercoverControllers.ConfigUndercover(s, m ,args)
 	case command == "jackheart":
 		jackheartControllers.StartGame(s, m, nil)
+	case strings.HasPrefix(command, "guess_word "):
+		args := strings.TrimPrefix(command, "guess_word ")
+		args = strings.TrimSpace(args) 
+		undercoverControllers.MrWhiteVote(s,nil,m, args)
 	}
 	
 
