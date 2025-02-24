@@ -212,6 +212,8 @@ func HandleVote(s *discordgo.Session, i *discordgo.InteractionCreate, prefix str
 	voteCount[voteTarget]++
 	if voteTarget == "close" {
 		voteStatus = false
+		playerVotes = make(map[string]string)
+		voteCount = make(map[string]int)
 	}
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

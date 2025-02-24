@@ -98,6 +98,9 @@ func sendMessageWithButtons(game *models.GameSession, s *discordgo.Session, m *d
 			},
 		})
 	}
+
+	models.ActiveGame.Undercover = 1
+	models.ActiveGame.ShowRoles = true
 }
 
 func UndercoverHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
