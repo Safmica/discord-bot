@@ -14,7 +14,7 @@ func updateGameMessage(s *discordgo.Session, channelID, messageID string) {
 
 	playerList :=  fmt.Sprintf(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎭 **WEREWOLF DASHBOARD** 🎭
+🐺 **WEREWOLF DASHBOARD** 🐺
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 _Jumlah Werewolf = %d_ (not realtime)
 _Jumlah Seer = %d_ (not realtime)

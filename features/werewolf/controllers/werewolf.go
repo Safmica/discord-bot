@@ -196,7 +196,7 @@ func HandleWerewolfVote(s *discordgo.Session, i *discordgo.InteractionCreate, ta
 		maxVotes := 0
 		voteLeaders := []string{}
 
-		for playerID, count := range voteCount {
+		for playerID, count := range voteWerewolfCount  {
 			if count > maxVotes {
 				maxVotes = count
 				voteLeaders = []string{playerID}

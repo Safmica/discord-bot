@@ -52,6 +52,47 @@ func StartSeerVoting(s *discordgo.Session, i *discordgo.InteractionCreate,channe
 		return
 	}
 
+	for _, id := range deathPlayerID {
+		if id == userID {
+			msg := &discordgo.Message{
+				Content: "🐺 **Kamu telah dimangsa werewolf!**",
+				Components: []discordgo.MessageComponent{},
+			}
+		
+			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Flags: discordgo.MessageFlagsEphemeral,
+				},
+			})
+			if err != nil {
+				fmt.Println("Gagal mengirim respon interaksi:", err)
+				return
+			}
+		
+			_, err = s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+				Content: msg.Content,
+				Components: msg.Components,
+				Flags: discordgo.MessageFlagsEphemeral,
+			})
+		
+			if err != nil {
+				fmt.Println("Gagal mengirim pesan:", err)
+				return
+			}
+			content := "🧙🏻‍♀️ **Sesi Seer Selesai!**"
+			s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+				ID:         seerTextID,
+				Channel:    models.ActiveGame.ID,
+				Content:    &content,
+				Components: &[]discordgo.MessageComponent{},
+			})
+		
+			seerVoteStatus = true
+			return
+		}
+	}
+
 	var voteOptions []discordgo.MessageComponent
 	for id, player := range models.ActiveGame.Players {
 		if player.ID != userID { 
@@ -64,7 +105,7 @@ func StartSeerVoting(s *discordgo.Session, i *discordgo.InteractionCreate,channe
 	}
 
 	msg := &discordgo.Message{
-		Content: "🔴 **Seer, pilih siapa yang akan kamu ramal!**",
+		Content: "🔮 **Seer, pilih siapa yang akan kamu ramal!**",
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{Components: voteOptions},
 		},
