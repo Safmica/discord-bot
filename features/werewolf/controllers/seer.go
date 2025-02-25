@@ -8,16 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var werewolfChannelID string
-var werewolfID []string
-var werewolfVotes = make(map[string]string)
-var voteWerewolfCount = make(map[string]int)
-var voteWerewolfMessageID string
-var voteWerewolfStatus = true
-var deathPlayerID []string
-var werewolfEatCount = 0
-
-func StartWerewolfVoting(s *discordgo.Session, i *discordgo.InteractionCreate,channelID string) {
+func StartSeerVoting(s *discordgo.Session, i *discordgo.InteractionCreate,channelID string) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("🚨 Recovered from panic:", r)
@@ -28,19 +19,11 @@ func StartWerewolfVoting(s *discordgo.Session, i *discordgo.InteractionCreate,ch
 
 	userID := i.Member.User.ID
 
-	found := false
-	for _, id := range werewolfID {
-		if id == i.Member.User.ID {
-			found = true
-			break
-		}
-	}
-
-	if  !found {
+	if  userID != models.ActiveGame.SeerID {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Kamu bukan Werewolf!",
+				Content: "❌ Kamu bukan Seer!",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
@@ -71,17 +54,17 @@ func StartWerewolfVoting(s *discordgo.Session, i *discordgo.InteractionCreate,ch
 
 	var voteOptions []discordgo.MessageComponent
 	for id, player := range models.ActiveGame.Players {
-		if player.Role != "werewolf" { 
+		if player.ID != userID { 
 			voteOptions = append(voteOptions, discordgo.Button{
 				Label:    player.Username,
 				Style:    discordgo.DangerButton,
-				CustomID: fmt.Sprintf("werewolf_eat_%s", id),
+				CustomID: fmt.Sprintf("seer_vote_%s", id),
 			})
 		}
 	}
 
 	msg := &discordgo.Message{
-		Content: "🔴 **Werewolf, pilih siapa yang akan kalian eliminasi!**",
+		Content: "🔴 **Seer, pilih siapa yang akan kamu ramal!**",
 		Components: []discordgo.MessageComponent{
 			discordgo.ActionsRow{Components: voteOptions},
 		},
@@ -112,13 +95,12 @@ func StartWerewolfVoting(s *discordgo.Session, i *discordgo.InteractionCreate,ch
 	models.ActiveGame.Players[i.Member.User.ID].VotingID = msg.ID
 }
 
-func HandleWerewolfVote(s *discordgo.Session, i *discordgo.InteractionCreate, target string) {
-	voteWerewolfStatus = true
+func HandleSeerVote(s *discordgo.Session, i *discordgo.InteractionCreate, target string) {
 	voteLock.Lock()
 	defer voteLock.Unlock()
 
 	userID := i.Member.User.ID
-	voteTarget := strings.TrimPrefix(target, "werewolf_eat_")
+	voteTarget := strings.TrimPrefix(target, "seer_vote_")
 
 	if models.ActiveGame == nil || !models.ActiveGame.Started {
 		return
@@ -146,33 +128,23 @@ func HandleWerewolfVote(s *discordgo.Session, i *discordgo.InteractionCreate, ta
 		return
 	}
 
-	found := false
-	for _, id := range werewolfID {
-		if id == i.Member.User.ID {
-			found = true
-			break
-		}
-	}
-
-	if  !found {
+	if  userID != models.ActiveGame.SeerID {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Kamu bukan Werewolf!",
+				Content: "❌ Kamu bukan Seer!",
 				Flags:   discordgo.MessageFlagsEphemeral,
 			},
 		})
 		return
 	}
 
-
-	werewolfVotes[userID] = voteTarget
-	voteWerewolfCount[voteTarget]++
+	selected := models.ActiveGame.Players[voteTarget]
 
 	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: "✅ Vote kamu telah dicatat!",
+			Content: fmt.Sprintf("Role milik %s adalah **%s**!", selected.Username, selected.Role),
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	})
@@ -186,38 +158,13 @@ func HandleWerewolfVote(s *discordgo.Session, i *discordgo.InteractionCreate, ta
 		}
 	}
 
-	models.ActiveGame.Players[userID].VotingID = ""
+	content := "🧙🏻‍♀️ **Sesi Seer Selesai!**"
+	s.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		ID:         seerTextID,
+		Channel:    models.ActiveGame.ID,
+		Content:    &content,
+		Components: &[]discordgo.MessageComponent{},
+	})
 
-	if len(werewolfVotes) == models.ActiveGame.Werewolf {
-        voteWerewolfStatus = false
-    }
-
-	if !voteWerewolfStatus {
-		maxVotes := 0
-		voteLeaders := []string{}
-
-		for playerID, count := range voteCount {
-			if count > maxVotes {
-				maxVotes = count
-				voteLeaders = []string{playerID}
-			} else if count == maxVotes {
-				voteLeaders = append(voteLeaders, playerID)
-			}
-		}
-
-		var eliminatedPlayerID string
-
-		if len(voteLeaders) == 1 {
-			eliminatedPlayerID = voteLeaders[0]
-			deathPlayerID = append(deathPlayerID, eliminatedPlayerID)
-		}
-
-		content := "🐺 **Sesi Werewolf Selesai!**"
-		s.ChannelMessageEditComplex(&discordgo.MessageEdit{
-			ID:         wwTextID,
-			Channel:    models.ActiveGame.ID,
-			Content:    &content,
-			Components: &[]discordgo.MessageComponent{},
-		})
-	}
+	seerVoteStatus = true
 }

@@ -27,6 +27,7 @@ type GameSession struct {
 	Werewolf      int
 	ShowRoles     bool
 	Seer          int
+	SeerID        string
 }
 
 var ActiveGame *GameSession

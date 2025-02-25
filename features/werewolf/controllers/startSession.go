@@ -60,6 +60,7 @@ func StartGameSession(s *discordgo.Session, i *discordgo.InteractionCreate) {
 
 	for i := j; i < j+models.ActiveGame.Seer; i++ {
 		players[i].Role = models.Seer
+		models.ActiveGame.SeerID = players[i].ID
     }
 
 	for i := j+models.ActiveGame.Seer; i < len(players); i++ {

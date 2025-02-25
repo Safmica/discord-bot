@@ -131,12 +131,16 @@ func WerewolfHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			StartGameSession(s, i)
 		}
 
-		if strings.HasPrefix(data.CustomID, "werewolf_vote_") {
+		if strings.HasPrefix(data.CustomID, "werewolf_eat_") {
 			HandleWerewolfVote(s, i, data.CustomID)
 		}
 
 		if data.CustomID == "quit_werewolf" {
 			QuitGame(s, i)
+		}
+
+		if data.CustomID == "werewolf_eat" {
+			StartWerewolfVoting(s, i, i.ChannelID)
 		}
 
 		if data.CustomID == "play_again_werewolf" {
