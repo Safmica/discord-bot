@@ -117,6 +117,14 @@ func WerewolfHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			JoinGame(s, i)
 		}
 
+		if data.CustomID == "seer_vote" {
+			StartSeerVoting(s, i, i.ChannelID)
+		}
+
+		if strings.HasPrefix(data.CustomID, "seer_vote_") {
+			HandleSeerVote(s, i, data.CustomID)
+		}
+
 		if data.CustomID == "start_werewolf" {
 			if models.ActiveGame == nil || models.ActiveGame.HostID != i.Member.User.ID {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
