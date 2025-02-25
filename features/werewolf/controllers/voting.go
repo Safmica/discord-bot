@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Safmica/discord-bot/features/undercover/models"
+	"github.com/Safmica/discord-bot/features/werewolf/models"
 	"github.com/bwmarrin/discordgo"
 )
 

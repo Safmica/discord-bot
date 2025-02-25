@@ -141,7 +141,7 @@ Malam telah tiba, semua pemain kembali kerumah dan beristirahat
 		buttons = append(buttons, discordgo.Button{
 			Label:    "Skip",
 			Style:    discordgo.SecondaryButton,
-			CustomID: "undercover_vote_skip",
+			CustomID: "werewolf_vote_skip",
 		})
 
 		if len(buttons) == 5 {
